@@ -17,7 +17,7 @@ export const STREAM_CONFIG = {
 } as const;
 
 export const OPENAI_CONFIG = {
-  model: 'gpt-4o',
+  model: 'gpt-4.1-nano',
   temperature: 0.7,
 } as const;
 
@@ -28,7 +28,7 @@ export const DEEPGRAM_CONFIG = {
 
 export const ELEVENLABS_CONFIG = {
   model_id: 'eleven_turbo_v2_5',
-  voice_id: 'EXAVITQu4vr4xnSDxMaL',
+  voice_id: 'bIHbv24MWmeRgasZH58o',
 } as const;
 
 export const SYSTEM_PROMPT = 'You are a helpful Spanish assistant that can answer questions and help with tasks.';

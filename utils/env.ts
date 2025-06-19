@@ -11,11 +11,10 @@ export function getApiConfig(): ApiConfig {
     openaiApiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
     deepgramApiKey: process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || '',
     elevenlabsApiKey: process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || '',
-    elevenlabsVoiceId: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL',
   };
 
   const missingKeys = Object.entries(config)
-    .filter(([key, value]) => !value && key !== 'elevenlabsVoiceId')
+    .filter(([, value]) => !value)
     .map(([key]) => key);
 
   if (missingKeys.length > 0) {

@@ -5,7 +5,6 @@ export interface ApiConfig {
   openaiApiKey: string;
   deepgramApiKey: string;
   elevenlabsApiKey: string;
-  elevenlabsVoiceId: string;
 }
 
 export interface ApiError {

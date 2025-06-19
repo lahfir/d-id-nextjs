@@ -1,7 +1,7 @@
 import { InitStreamMessage, StreamTextMessage, WebSocketResponse, ConnectionState, StreamMessage } from '@/types/did';
 import { ApiConfig } from '@/types/api';
 import { WebRTCManager, WebRTCCallbacks } from './webrtcManager';
-import { PRESENTER_CONFIG, STREAM_CONFIG, ELEVENLABS_CONFIG, ERROR_MESSAGES } from '@/utils/constants';
+import { PRESENTER_CONFIG, ELEVENLABS_CONFIG, ERROR_MESSAGES } from '@/utils/constants';
 
 /**
  * Client for D-ID streaming API with WebSocket and WebRTC
@@ -64,7 +64,7 @@ export class DidClient {
       sessionId: this.connectionState.sessionId,
       isConnected: this.connectionState.isConnected,
       service: this.config.didService,
-      voiceId: this.config.elevenlabsVoiceId
+      voiceId: ELEVENLABS_CONFIG.voice_id
     });
 
     if (!this.ws || !this.connectionState.streamId || !this.connectionState.sessionId) {
@@ -76,7 +76,6 @@ export class DidClient {
       throw new Error('Not connected to streaming service');
     }
 
-    // WORKAROUND: Create message exactly like vanilla version with fresh parameters
     const message: StreamTextMessage = {
       type: 'stream-text',
       payload: {
@@ -85,13 +84,13 @@ export class DidClient {
           input: text,
           provider: {
             type: 'elevenlabs',
-            voice_id: 'EXAVITQu4vr4xnSDxMaL', // Hardcode the working voice ID
-            model_id: 'eleven_turbo_v2_5', // Hardcode the working model
+            voice_id: ELEVENLABS_CONFIG.voice_id,
+            model_id: ELEVENLABS_CONFIG.model_id,
           },
-          ssml: 'false', // Ensure exact string match
+          ssml: 'false',
         },
         config: {
-          stitch: true, // Hardcode like vanilla
+          stitch: true,
         },
         apiKeyExternal: {
           elevenlabs: { key: this.config.elevenlabsApiKey },
