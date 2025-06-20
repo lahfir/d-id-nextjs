@@ -68,7 +68,7 @@ export class DeepgramClient {
   private async transcribeAudio(audioBlob: Blob): Promise<string> {
     try {
       const response = await fetch(
-        `https://api.deepgram.com/v1/listen?model=${DEEPGRAM_CONFIG.model}&smart_format=${DEEPGRAM_CONFIG.smart_format}`,
+        `https://api.deepgram.com/v1/listen?model=${DEEPGRAM_CONFIG.model}&smart_format=${DEEPGRAM_CONFIG.smart_format}&language=es`,
         {
           method: 'POST',
           headers: {

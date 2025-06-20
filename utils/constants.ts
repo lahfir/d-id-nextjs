@@ -2,7 +2,8 @@ import { PresenterConfig } from '@/types/did';
 
 export const PRESENTER_CONFIG: PresenterConfig = {
   talks: {
-    source_url: 'https://create-images-results.d-id.com/DefaultPresenters/Emma_f/v1_image.jpeg',
+    // source_url: 'https://create-images-results.d-id.com/DefaultPresenters/Emma_f/v1_image.jpeg',
+    source_url: 'https://cdn.pixabay.com/photo/2022/09/12/17/39/man-7450033_1280.jpg',
   },
   clips: {
     presenter_id: 'v2_public_alex@qcvo4gupoy',
@@ -28,7 +29,7 @@ export const DEEPGRAM_CONFIG = {
 
 export const ELEVENLABS_CONFIG = {
   model_id: 'eleven_turbo_v2_5',
-  voice_id: 'bIHbv24MWmeRgasZH58o',
+  voice_id: 'N2lVS1w4EtoT3dr4eOWO',
 } as const;
 
 export const SYSTEM_PROMPT = 'You are a helpful Spanish assistant that can answer questions and help with tasks.';
