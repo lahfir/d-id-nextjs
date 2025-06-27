@@ -84,3 +84,85 @@ export interface ConnectionState {
   sessionId: string | null;
   error: string | null;
 }
+
+// Animation API Types
+export interface AnimationScript {
+  type: 'text' | 'audio';
+  subtitles?: boolean;
+  provider?: {
+    type: 'microsoft' | 'amazon' | 'google' | 'elevenlabs';
+    voice_id?: string;
+    voice_config?: {
+      style?: string;
+      language?: string;
+    };
+  };
+  ssml?: boolean;
+  input?: string; // For text
+  audio_url?: string; // For audio
+}
+
+export interface AnimationConfig {
+  fluent?: boolean;
+  driver_expressions?: {
+    expressions: Array<{
+      start_frame: number;
+      expression: 'neutral' | 'happy' | 'serious' | 'surprise';
+      intensity: number;
+    }>;
+  };
+  align_driver?: boolean;
+  align_expand_factor?: number;
+  auto_match?: boolean;
+  motion_factor?: number;
+  normalization_factor?: number;
+  sharpen?: boolean;
+  stitch?: boolean;
+  result_format?: 'mp4' | 'gif' | 'mov' | 'webm';
+  fluent_factor?: number;
+  pad_audio?: number;
+  driver_url?: string;
+  logo?: {
+    url: string;
+    position: Array<number>;
+  };
+}
+
+export interface CreateAnimationRequest {
+  source_url: string;
+  config?: AnimationConfig;
+  webhook?: string;
+  name?: string;
+  user_data?: string;
+}
+
+export interface AnimationResponse {
+  id: string;
+  object: string;
+  created_at: string;
+  created_by: string;
+  status: 'created' | 'started' | 'done' | 'error' | 'rejected';
+  driver_url?: string;
+  config?: AnimationConfig;
+  script?: AnimationScript;
+  result_url?: string;
+  metadata?: {
+    size: number;
+    duration: number;
+    resolution: {
+      width: number;
+      height: number;
+    };
+  };
+  error?: {
+    kind: string;
+    description: string;
+  };
+  webhook?: string;
+  user_data?: string;
+}
+
+export interface AnimationsListResponse {
+  animations: AnimationResponse[];
+  token?: string;
+}

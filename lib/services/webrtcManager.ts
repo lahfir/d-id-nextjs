@@ -1,4 +1,4 @@
-import { STREAM_CONFIG } from '@/utils/constants';
+import { STREAM_CONFIG } from '@/lib/utils/constants';
 
 export interface WebRTCCallbacks {
   onIceGatheringStateChange: (state: RTCIceGatheringState) => void;

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ChatMessage, ConversationState } from '@/types/conversation';
-import { OpenAIClient } from '@/services/openaiClient';
-import { SYSTEM_PROMPT } from '@/utils/constants';
+import { OpenAIClient } from '@/lib/services/openaiClient';
+import { SYSTEM_PROMPT } from '@/lib/utils/constants';
 
 /**
  * Hook for managing conversation history and LLM interactions
@@ -59,7 +59,7 @@ export function useConversation(openaiClient: OpenAIClient | null) {
       return assistantResponse;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       setState(prev => ({
         ...prev,
         messages: prev.messages.slice(0, -1), // Remove user message on error

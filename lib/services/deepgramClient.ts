@@ -1,5 +1,5 @@
 import { DeepgramResponse } from '@/types/conversation';
-import { DEEPGRAM_CONFIG, ERROR_MESSAGES } from '@/utils/constants';
+import { DEEPGRAM_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
 
 /**
  * Client for Deepgram speech-to-text transcription

@@ -3,7 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ClipsPresenter } from '@/types/did';
 import { usePresenter } from '@/contexts/PresenterContext';
+import { AnimationService } from '@/lib/services/animationService';
 import Image from 'next/image';
+
+interface AnimationCache {
+  id: string;
+  sourceUrl: string;
+  resultUrl: string | null;
+  status: 'created' | 'started' | 'done' | 'error';
+  createdAt: string;
+  localPath?: string;
+}
 
 interface PresenterSelectorProps {
   onClose: () => void;
@@ -21,11 +31,28 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
     serviceType === 'clips' ? presenterConfig.clips.presenter_id : null
   );
 
+  // Animation states for talks tab
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [animating, setAnimating] = useState(false);
+  const [animationProgress, setAnimationProgress] = useState<string>('');
+  const [cachedAnimations, setCachedAnimations] = useState<AnimationCache[]>([]);
+
   useEffect(() => {
     if (mode === 'clips') {
       fetchPresenters();
+    } else if (mode === 'talks') {
+      loadCachedAnimations();
     }
   }, [mode]);
+
+  const loadCachedAnimations = () => {
+    const cached = AnimationService.getAllCached();
+    const completedAnimations = cached.filter(
+      (animation) => animation.status === 'done' && animation.resultUrl
+    );
+    setCachedAnimations(completedAnimations);
+  };
 
   const fetchPresenters = async () => {
     setLoading(true);
@@ -52,6 +79,115 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
   const handleTalksSubmit = () => {
     setTalksMode(customImageUrl);
     onClose();
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setCustomImageUrl('');
+      setError(null);
+    }
+  };
+
+  const handleUrlPreview = (url: string) => {
+    setCustomImageUrl(url);
+    if (url) {
+      setPreviewUrl(url);
+      setSelectedFile(null);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleCachedAnimationSelect = (animation: AnimationCache) => {
+    setTalksMode(animation.sourceUrl, animation.resultUrl || undefined);
+    onClose();
+  };
+
+  const handleCreateAnimation = async () => {
+    if (!selectedFile && !customImageUrl) {
+      setError('Please select an image or provide a URL');
+      return;
+    }
+
+    setAnimating(true);
+    setError(null);
+    setAnimationProgress('Preparing...');
+
+    try {
+      let sourceUrl = customImageUrl;
+
+      if (selectedFile) {
+        setAnimationProgress('Uploading image...');
+        const uploadResult = await AnimationService.uploadImage(selectedFile);
+        sourceUrl = uploadResult.url;
+      }
+
+      const existing = AnimationService.findCachedAnimation(sourceUrl);
+      if (existing && existing.resultUrl) {
+        setAnimationProgress('Using cached animation...');
+        setTalksMode(sourceUrl, existing.resultUrl);
+        onClose();
+        return;
+      }
+
+      setAnimationProgress('Creating animation...');
+      const animationRequest = {
+        source_url: sourceUrl,
+        config: {
+          stitch: true,
+        },
+      };
+
+      const animation = await AnimationService.createAnimation(animationRequest);
+
+      if (animation.status === 'done') {
+        setAnimationProgress('Animation ready!');
+        setTalksMode(sourceUrl, animation.result_url || undefined);
+        onClose();
+        return;
+      }
+
+      setAnimationProgress('Processing animation...');
+      const finalAnimation = await AnimationService.pollAnimation(
+        animation.id,
+        (update) => {
+          if (update.status === 'started') {
+            setAnimationProgress('Animation in progress...');
+          }
+        }
+      );
+
+      if (finalAnimation.status === 'done' && finalAnimation.result_url) {
+        setAnimationProgress('Animation complete!');
+        loadCachedAnimations(); // Refresh cached animations
+        setTalksMode(sourceUrl, finalAnimation.result_url);
+        onClose();
+      } else if (finalAnimation.status === 'error') {
+        throw new Error(finalAnimation.error?.description || 'Animation failed');
+      } else {
+        throw new Error('Animation failed to complete');
+      }
+
+    } catch (err) {
+      console.error('Animation creation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create animation');
+    } finally {
+      setAnimating(false);
+      setAnimationProgress('');
+    }
   };
 
   const handleDefaultSelect = () => {
@@ -192,40 +328,121 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
                 <p className="text-white/60 text-sm">Use the default presenter image</p>
               </button>
 
-              {/* Custom URL Input */}
-              <div>
-                <label className="block text-white mb-2">Custom Image URL</label>
-                <input
-                  type="url"
-                  value={customImageUrl}
-                  onChange={(e) => setCustomImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 bg-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
-                />
-                <button
-                  onClick={handleTalksSubmit}
-                  disabled={!customImageUrl}
-                  className="mt-4 px-6 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/5 disabled:cursor-not-allowed text-white rounded-lg transition-all"
-                >
-                  Apply Custom Image
-                </button>
+              {/* Error Display */}
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Image Source Selection */}
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Select Image Source</h4>
+
+                {/* File Upload */}
+                <div>
+                  <label className="block text-white/80 mb-2 text-sm">Upload Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="w-full px-4 py-2 bg-white/10 rounded-lg text-white file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:bg-white/20 file:text-white hover:file:bg-white/30"
+                  />
+                </div>
+
+                {/* URL Input */}
+                <div>
+                  <label className="block text-white/80 mb-2 text-sm">Or Enter Image URL</label>
+                  <input
+                    type="url"
+                    value={customImageUrl}
+                    onChange={(e) => handleUrlPreview(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-4 py-2 bg-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20"
+                  />
+                </div>
               </div>
 
               {/* Preview */}
-              {customImageUrl && (
-                <div className="mt-6">
+              {previewUrl && (
+                <div>
                   <h4 className="text-white mb-2">Preview:</h4>
-                  <div className="relative w-48 h-48 rounded-lg overflow-hidden bg-white/5">
+                  <div className="relative w-32 h-32 rounded-lg overflow-hidden bg-white/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={customImageUrl}
+                      src={previewUrl}
                       alt="Preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
+                        setError('Failed to load image preview');
                       }}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleTalksSubmit}
+                  disabled={!customImageUrl && !selectedFile}
+                  className="flex-1 px-6 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/5 disabled:cursor-not-allowed text-white rounded-lg transition-all"
+                >
+                  Apply Image
+                </button>
+                <button
+                  onClick={handleCreateAnimation}
+                  disabled={(!selectedFile && !customImageUrl) || animating}
+                  className="flex-1 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-all"
+                >
+                  {animating ? 'Creating...' : 'Create Animation'}
+                </button>
+              </div>
+
+              {/* Progress */}
+              {animationProgress && (
+                <div className="text-center">
+                  <div className="text-white/80 text-sm mb-2">{animationProgress}</div>
+                  <div className="w-full bg-white/10 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cached Animations Section */}
+              {cachedAnimations.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-white/10">
+                  <h4 className="text-white font-medium mb-4">Your Animations</h4>
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {cachedAnimations.map((animation) => (
+                      <div key={animation.id} className="flex-shrink-0">
+                        <button
+                          onClick={() => handleCachedAnimationSelect(animation)}
+                          className="group relative w-24 h-24 rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 transition-all border border-white/10 hover:border-white/20"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={animation.sourceUrl}
+                            alt="Cached animation"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="text-white text-xs font-medium">Select</div>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                            <div className="text-white text-xs truncate">
+                              {new Date(animation.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-white/60 text-xs mt-2">Click any animation to reuse it</p>
                 </div>
               )}
             </div>

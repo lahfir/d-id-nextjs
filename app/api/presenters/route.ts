@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PresentersApiResponse } from '@/types/did';
-import { getApiConfig } from '@/utils/env';
+import { getApiConfig } from '@/lib/utils/env';
 
 // Cache for presenters data (5 minutes)
 let presentersCache: {

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { DeepgramClient } from '@/services/deepgramClient';
+import { DeepgramClient } from '@/lib/services/deepgramClient';
 
 export interface VoiceRecordingState {
   isRecording: boolean;
@@ -66,7 +66,7 @@ export function useVoiceRecording(deepgramClient: DeepgramClient | null) {
         ...prev,
         isProcessing: false,
       }));
-      
+
       return transcription;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process recording';

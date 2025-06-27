@@ -2,13 +2,14 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { PresenterConfig, ClipsPresenter } from '@/types/did';
-import { PRESENTER_CONFIG } from '@/utils/constants';
+import { PRESENTER_CONFIG } from '@/lib/utils/constants';
 
 interface PresenterContextType {
   serviceType: 'talks' | 'clips';
   presenterConfig: PresenterConfig;
   idleVideoUrl: string | null;
-  setTalksMode: (imageUrl?: string) => void;
+  customAnimationUrl: string | null;
+  setTalksMode: (imageUrl?: string, animationUrl?: string) => void;
   setClipsMode: (presenter: ClipsPresenter) => void;
   resetToDefault: () => void;
   onModeChange?: () => void; // Callback for when mode changes (for disconnecting)
@@ -25,9 +26,10 @@ export function PresenterProvider({ children }: PresenterProviderProps) {
   const [serviceType, setServiceType] = useState<'talks' | 'clips'>('talks');
   const [presenterConfig, setPresenterConfig] = useState<PresenterConfig>(PRESENTER_CONFIG);
   const [idleVideoUrl, setIdleVideoUrl] = useState<string | null>(null);
+  const [customAnimationUrl, setCustomAnimationUrl] = useState<string | null>(null);
   const [onModeChangeCallback, setOnModeChangeCallback] = useState<(() => void) | undefined>();
 
-  const setTalksMode = useCallback((imageUrl?: string) => {
+  const setTalksMode = useCallback((imageUrl?: string, animationUrl?: string) => {
     // Trigger disconnect before changing mode
     if (onModeChangeCallback) {
       onModeChangeCallback();
@@ -41,6 +43,7 @@ export function PresenterProvider({ children }: PresenterProviderProps) {
       },
     }));
     setIdleVideoUrl(null); // Use default idle video for talks
+    setCustomAnimationUrl(animationUrl || null); // Set custom animation for idle
   }, [onModeChangeCallback]);
 
   const setClipsMode = useCallback((presenter: ClipsPresenter) => {
@@ -60,10 +63,12 @@ export function PresenterProvider({ children }: PresenterProviderProps) {
     setIdleVideoUrl(presenter.idle_video || presenter.talking_preview_url || presenter.video_url || null);
   }, [onModeChangeCallback]);
 
+
   const resetToDefault = useCallback(() => {
     setServiceType('talks');
     setPresenterConfig(PRESENTER_CONFIG);
     setIdleVideoUrl(null);
+    setCustomAnimationUrl(null);
   }, []);
 
   const setOnModeChange = useCallback((callback: () => void) => {
@@ -74,6 +79,7 @@ export function PresenterProvider({ children }: PresenterProviderProps) {
     serviceType,
     presenterConfig,
     idleVideoUrl,
+    customAnimationUrl,
     setTalksMode,
     setClipsMode,
     resetToDefault,

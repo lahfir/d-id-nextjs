@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { DidClient } from '@/services/didClient';
+import { DidClient } from '@/lib/services/didClient';
 import { ConnectionState } from '@/types/did';
 import { ApiConfig } from '@/types/api';
 import { usePresenter } from '@/contexts/PresenterContext';

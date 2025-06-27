@@ -5,7 +5,10 @@
       "Bash(mkdir:*)",
       "Bash(bun run:*)",
       "Bash(npx tsc:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:docs.d-id.com)",
+      "Bash(sed:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

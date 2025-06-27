@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePresenter } from '@/contexts/PresenterContext';
 
 interface VideoDisplayProps {
   streamVideo: MediaStream | null;
@@ -18,11 +19,14 @@ export function VideoDisplay({
   isVideoPlaying,
   isStreamReady
 }: VideoDisplayProps) {
+  const { serviceType, customAnimationUrl } = usePresenter();
   const streamVideoRef = useRef<HTMLVideoElement>(null);
   const idleVideoRef = useRef<HTMLVideoElement>(null);
+  const animationVideoRef = useRef<HTMLVideoElement>(null);
   const [fallbackVideoSrc, setFallbackVideoSrc] = useState<string | null>(null);
   const [idleLoading, setIdleLoading] = useState(false);
   const [idleProgress, setIdleProgress] = useState(0);
+  const [animationLoading, setAnimationLoading] = useState(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
@@ -46,14 +50,17 @@ export function VideoDisplay({
   }, [streamVideo, isStreamReady]);
 
   /**
-   * Calculate video opacity based on stream state
-   * - Show stream video only when actively playing
-   * - Show idle video when connected but not streaming, or when not connected at all
+   * Calculate video opacity based on stream state and service type
+   * - Show stream video when actively playing
+   * - Show custom animation for talks mode when not streaming (if available)
+   * - Show default idle video as fallback
    */
   const showStreamVideo = isVideoPlaying && isStreamReady;
-  const showIdleVideo = !showStreamVideo;
+  const showCustomAnimation = !showStreamVideo && serviceType === 'talks' && customAnimationUrl;
+  const showIdleVideo = !showStreamVideo && !showCustomAnimation;
 
   const streamOpacity = showStreamVideo ? 1 : 0;
+  const customAnimationOpacity = showCustomAnimation ? 1 : 0;
   const idleOpacity = showIdleVideo ? 1 : 0;
 
   /**
@@ -63,6 +70,44 @@ export function VideoDisplay({
     // Reset fallback when idleVideoSrc changes
     setFallbackVideoSrc(null);
   }, [idleVideoSrc]);
+
+  /**
+   * Handle custom animation video playback
+   */
+  useEffect(() => {
+    if (animationVideoRef.current && customAnimationUrl && showCustomAnimation) {
+      const video = animationVideoRef.current;
+      
+      const handleLoadStart = () => {
+        setAnimationLoading(true);
+      };
+
+      const handleCanPlay = () => {
+        setAnimationLoading(false);
+      };
+
+      const onError = () => {
+        console.warn('Custom animation video failed to load:', customAnimationUrl);
+        setAnimationLoading(false);
+      };
+
+      video.addEventListener('error', onError);
+      video.addEventListener('loadstart', handleLoadStart);
+      video.addEventListener('canplaythrough', handleCanPlay);
+
+      video.play().catch((error) => {
+        if (error.name !== 'AbortError') {
+          console.warn('Custom animation video play failed:', error.message);
+        }
+      });
+
+      return () => {
+        video.removeEventListener('error', onError);
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('canplaythrough', handleCanPlay);
+      };
+    }
+  }, [customAnimationUrl, showCustomAnimation]);
 
   useEffect(() => {
     if (idleVideoRef.current && (idleVideoSrc || fallbackVideoSrc) && showIdleVideo) {
@@ -133,6 +178,20 @@ export function VideoDisplay({
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-gray-900">
+      {/* Custom Animation Video (for talks mode) */}
+      {customAnimationUrl && (
+        <video
+          ref={animationVideoRef}
+          src={customAnimationUrl}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+          style={{ opacity: customAnimationOpacity }}
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+      )}
+
       {/* Idle Video */}
       {(idleVideoSrc || fallbackVideoSrc) && (
         <video
@@ -156,8 +215,18 @@ export function VideoDisplay({
         playsInline
       />
 
-      {/* Initialization overlay */}
-      {idleLoading && (
+      {/* Custom animation loading overlay */}
+      {animationLoading && showCustomAnimation && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto"></div>
+            <div className="text-gray-400 text-sm">Loading custom animation...</div>
+          </div>
+        </div>
+      )}
+
+      {/* Idle loading overlay */}
+      {idleLoading && showIdleVideo && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
           <div className="text-center space-y-3">
             <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto"></div>
@@ -166,8 +235,8 @@ export function VideoDisplay({
         </div>
       )}
 
-      {/* Initialization overlay */}
-      {!isStreamReady && !idleLoading && !idleVideoSrc && (
+      {/* General loading overlay */}
+      {!isStreamReady && !idleLoading && !animationLoading && !idleVideoSrc && !customAnimationUrl && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
           <div className="text-center space-y-3">
             <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto"></div>

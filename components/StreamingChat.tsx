@@ -8,9 +8,9 @@ import { PresenterSelector } from './PresenterSelector';
 import { useDidStreaming } from '@/hooks/useDidStreaming';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useConversation } from '@/hooks/useConversation';
-import { DeepgramClient } from '@/services/deepgramClient';
-import { OpenAIClient } from '@/services/openaiClient';
-import { getApiConfig } from '@/utils/env';
+import { DeepgramClient } from '@/lib/services/deepgramClient';
+import { OpenAIClient } from '@/lib/services/openaiClient';
+import { getApiConfig } from '@/lib/utils/env';
 
 /**
  * Main streaming chat component with simple compact interface
@@ -203,11 +203,10 @@ export function StreamingChat() {
                     <button
                       onClick={() => setShowPresenterSelector(true)}
                       disabled={connectionStatus.isConnected || connectionStatus.isConnecting}
-                      className={`p-1 transition-colors ${
-                        connectionStatus.isConnected || connectionStatus.isConnecting
-                          ? 'text-white/30 cursor-not-allowed'
-                          : 'text-white/60 hover:text-white'
-                      }`}
+                      className={`p-1 transition-colors ${connectionStatus.isConnected || connectionStatus.isConnecting
+                        ? 'text-white/30 cursor-not-allowed'
+                        : 'text-white/60 hover:text-white'
+                        }`}
                       title={
                         connectionStatus.isConnected
                           ? 'Disconnect to change presenter'

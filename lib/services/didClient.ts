@@ -1,7 +1,7 @@
 import { InitStreamMessage, StreamTextMessage, WebSocketResponse, ConnectionState, StreamMessage, PresenterConfig } from '@/types/did';
 import { ApiConfig } from '@/types/api';
 import { WebRTCManager, WebRTCCallbacks } from './webrtcManager';
-import { PRESENTER_CONFIG, ELEVENLABS_CONFIG, ERROR_MESSAGES } from '@/utils/constants';
+import { PRESENTER_CONFIG, ELEVENLABS_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
 
 /**
  * Client for D-ID streaming API with WebSocket and WebRTC

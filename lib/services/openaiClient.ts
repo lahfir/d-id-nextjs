@@ -1,6 +1,6 @@
 import { ChatMessage, OpenAIRequest, OpenAIResponse } from '@/types/conversation';
 import { ApiError } from '@/types/api';
-import { OPENAI_CONFIG, ERROR_MESSAGES } from '@/utils/constants';
+import { OPENAI_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
 
 /**
  * Client for OpenAI GPT-4o chat completions

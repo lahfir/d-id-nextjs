@@ -29,7 +29,7 @@ export const DEEPGRAM_CONFIG = {
 
 export const ELEVENLABS_CONFIG = {
   model_id: 'eleven_turbo_v2_5',
-  voice_id: 'N2lVS1w4EtoT3dr4eOWO',
+  voice_id: 'nPczCjzI2devNBz1zQrb',
 } as const;
 
 export const SYSTEM_PROMPT = 'You are a helpful Spanish assistant that can answer questions and help with tasks.';
@@ -42,4 +42,14 @@ export const ERROR_MESSAGES = {
   NO_RECORDING: 'No recording in progress',
   WEBSOCKET_UNDEFINED: 'WebSocket instance is undefined. Cannot send message.',
   WEBSOCKET_NOT_OPEN: 'WebSocket is not open. Cannot send message.',
+  ANIMATION_FAILED: 'Failed to create animation. Please try again.',
+  UPLOAD_FAILED: 'Failed to upload file. Please try again.',
+} as const;
+
+export const ANIMATION_CONFIG = {
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  pollingInterval: 2000, // 2 seconds
+  maxPollingRetries: 60, // 2 minutes max
+  supportedImageTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  supportedVideoTypes: ['video/mp4', 'video/quicktime', 'video/webm'],
 } as const;
