@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { VideoDisplay } from './VideoDisplay';
 import { ChatInterface } from './ChatInterface';
 import { ErrorBoundary } from './ErrorBoundary';
+import { PresenterSelector } from './PresenterSelector';
 import { useDidStreaming } from '@/hooks/useDidStreaming';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { useConversation } from '@/hooks/useConversation';
@@ -22,6 +23,7 @@ export function StreamingChat() {
 
   const [initError, setInitError] = useState<string | null>(null);
   const [isInterfaceOpen, setIsInterfaceOpen] = useState(true);
+  const [showPresenterSelector, setShowPresenterSelector] = useState(false);
 
   /**
    * Initialize API clients
@@ -90,6 +92,7 @@ export function StreamingChat() {
   const toggleInterface = useCallback(() => {
     setIsInterfaceOpen(!isInterfaceOpen);
   }, [isInterfaceOpen]);
+
 
   /**
    * Connection status indicator
@@ -196,6 +199,25 @@ export function StreamingChat() {
                     <div className={`w-1.5 h-1.5 rounded-full ${connectionStatus.isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                   </div>
                   <div className="flex items-center space-x-2">
+                    {/* Presenter Selector Button */}
+                    <button
+                      onClick={() => setShowPresenterSelector(true)}
+                      disabled={connectionStatus.isConnected || connectionStatus.isConnecting}
+                      className={`p-1 transition-colors ${
+                        connectionStatus.isConnected || connectionStatus.isConnecting
+                          ? 'text-white/30 cursor-not-allowed'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                      title={
+                        connectionStatus.isConnected
+                          ? 'Disconnect to change presenter'
+                          : 'Change Presenter'
+                      }
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </button>
                     {/* Connection Controls */}
                     {!connectionStatus.isConnected ? (
                       <button
@@ -260,21 +282,42 @@ export function StreamingChat() {
           </div>
 
           {/* Error Display */}
-          {(conversation.error || voiceRecording.error) && (
-            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 max-w-sm w-full mx-4">
+          {(conversation.error || voiceRecording.error || streaming.connectionState.error) && (
+            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 max-w-md w-full mx-4">
               <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/20 rounded-lg p-3 animate-in slide-in-from-top duration-200">
                 <div className="flex items-start space-x-2">
                   <div className="text-red-500 text-sm">⚠</div>
                   <div className="flex-1">
-                    <p className="text-red-400 text-xs">
-                      {conversation.error || voiceRecording.error}
-                    </p>
+                    <div className="text-red-400 text-xs space-y-1">
+                      {streaming.connectionState.error && (
+                        <div>
+                          <div className="font-medium">D-ID Streaming Error:</div>
+                          <div className="text-red-300 break-words">{streaming.connectionState.error}</div>
+                        </div>
+                      )}
+                      {conversation.error && (
+                        <div>
+                          <div className="font-medium">AI Error:</div>
+                          <div className="text-red-300">{conversation.error}</div>
+                        </div>
+                      )}
+                      {voiceRecording.error && (
+                        <div>
+                          <div className="font-medium">Voice Error:</div>
+                          <div className="text-red-300">{voiceRecording.error}</div>
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={() => {
                         conversation.clearError();
                         voiceRecording.clearError();
+                        // Clear streaming error by reconnecting
+                        if (streaming.connectionState.error) {
+                          streaming.disconnect();
+                        }
                       }}
-                      className="mt-1 text-xs text-red-400/80 hover:text-red-400 underline"
+                      className="mt-2 text-xs text-red-400/80 hover:text-red-400 underline"
                     >
                       Dismiss
                     </button>
@@ -284,6 +327,13 @@ export function StreamingChat() {
             </div>
           )}
         </div>
+
+        {/* Presenter Selector Modal */}
+        {showPresenterSelector && (
+          <PresenterSelector
+            onClose={() => setShowPresenterSelector(false)}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

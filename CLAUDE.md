@@ -1,0 +1,1 @@
+- Never run the dev server, always use the bun command and please test the build always at the end

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface VideoDisplayProps {
   streamVideo: MediaStream | null;
@@ -20,6 +20,10 @@ export function VideoDisplay({
 }: VideoDisplayProps) {
   const streamVideoRef = useRef<HTMLVideoElement>(null);
   const idleVideoRef = useRef<HTMLVideoElement>(null);
+  const [fallbackVideoSrc, setFallbackVideoSrc] = useState<string | null>(null);
+  const [idleLoading, setIdleLoading] = useState(false);
+  const [idleProgress, setIdleProgress] = useState(0);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
    * Set up stream video when available
@@ -56,50 +60,84 @@ export function VideoDisplay({
    * Handle idle video playback
    */
   useEffect(() => {
-    console.log('VideoDisplay state:', {
-      idleVideoSrc,
-      isVideoPlaying,
-      isStreamReady,
-      showIdleVideo,
-      streamOpacity,
-      idleOpacity
-    });
+    // Reset fallback when idleVideoSrc changes
+    setFallbackVideoSrc(null);
+  }, [idleVideoSrc]);
 
-    if (idleVideoRef.current && idleVideoSrc && showIdleVideo) {
-      console.log('Attempting to play idle video:', idleVideoSrc);
-
-      // Add event listeners for debugging
+  useEffect(() => {
+    if (idleVideoRef.current && (idleVideoSrc || fallbackVideoSrc) && showIdleVideo) {
       const video = idleVideoRef.current;
+      const videoSource = fallbackVideoSrc || idleVideoSrc;
 
-      const onLoadedData = () => console.log('Idle video loaded successfully');
-      const onError = (e: Event) => console.error('Idle video load error:', e);
-      const onCanPlay = () => console.log('Idle video can play');
+      const handleLoadStart = () => {
+        setIdleLoading(true);
+        setIdleProgress(0);
 
-      video.addEventListener('loadeddata', onLoadedData);
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = setInterval(() => {
+          setIdleProgress(prev => (prev < 90 ? prev + 1 : prev));
+        }, 200);
+      };
+
+      const handleProgress = () => {
+        if (!video.duration || isNaN(video.duration)) return;
+        const bufferedEnd = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+        const percent = Math.min(100, (bufferedEnd / video.duration) * 100);
+        setIdleProgress(percent);
+      };
+
+      const handleCanPlay = () => {
+        setIdleLoading(false);
+        setIdleProgress(100);
+
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      };
+
+      const onError = () => {
+        console.warn('Idle video failed to load:', videoSource);
+
+        // If original video failed and we're not already using fallback, try fallback
+        if (!fallbackVideoSrc && idleVideoSrc && idleVideoSrc.startsWith('http')) {
+          console.log('Trying fallback local video...');
+          setFallbackVideoSrc('/alex_v2_idle.mp4'); // Default fallback
+        }
+      };
+
       video.addEventListener('error', onError);
-      video.addEventListener('canplay', onCanPlay);
+      video.addEventListener('loadstart', handleLoadStart);
+      video.addEventListener('progress', handleProgress);
+      video.addEventListener('canplaythrough', handleCanPlay);
 
       video.play().catch((error) => {
         if (error.name !== 'AbortError') {
-          console.error('Idle video play error:', error);
+          console.warn('Idle video play failed:', error.message);
         }
       });
 
       return () => {
-        video.removeEventListener('loadeddata', onLoadedData);
         video.removeEventListener('error', onError);
-        video.removeEventListener('canplay', onCanPlay);
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('progress', handleProgress);
+        video.removeEventListener('canplaythrough', handleCanPlay);
+
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
       };
     }
-  }, [idleVideoSrc, showIdleVideo]);
+  }, [idleVideoSrc, fallbackVideoSrc, showIdleVideo]);
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-gray-900">
       {/* Idle Video */}
-      {idleVideoSrc && (
+      {(idleVideoSrc || fallbackVideoSrc) && (
         <video
           ref={idleVideoRef}
-          src={idleVideoSrc}
+          src={fallbackVideoSrc || idleVideoSrc || undefined}
           className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out"
           style={{ opacity: idleOpacity }}
           autoPlay
@@ -119,7 +157,17 @@ export function VideoDisplay({
       />
 
       {/* Initialization overlay */}
-      {!isStreamReady && !idleVideoSrc && (
+      {idleLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto"></div>
+            <div className="text-gray-400 text-sm">Downloading {idleProgress.toFixed(0)}%</div>
+          </div>
+        </div>
+      )}
+
+      {/* Initialization overlay */}
+      {!isStreamReady && !idleLoading && !idleVideoSrc && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
           <div className="text-center space-y-3">
             <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto"></div>

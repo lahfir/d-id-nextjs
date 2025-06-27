@@ -32,7 +32,6 @@ export class WebRTCManager {
     if (!this.peerConnection) {
       this.peerConnection = new RTCPeerConnection({ iceServers });
       this.dataChannel = this.peerConnection.createDataChannel('JanusDataChannel');
-      
       this.setupEventListeners(callbacks);
     }
 
@@ -58,7 +57,7 @@ export class WebRTCManager {
     this.peerConnection.addEventListener('iceconnectionstatechange', () => {
       const state = this.peerConnection!.iceConnectionState;
       callbacks.onIceConnectionStateChange(state);
-      
+
       if (state === 'failed' || state === 'closed') {
         this.close();
       }
@@ -78,7 +77,7 @@ export class WebRTCManager {
     });
 
     this.peerConnection.addEventListener('track', (event) => {
-      this.setupStatsMonitoring(event, callbacks);
+      this.setupStatsMonitoring(event);
       callbacks.onTrack(event);
     });
 
@@ -100,7 +99,7 @@ export class WebRTCManager {
   /**
    * Sets up video stats monitoring
    */
-  private setupStatsMonitoring(event: RTCTrackEvent, callbacks: WebRTCCallbacks): void {
+  private setupStatsMonitoring(event: RTCTrackEvent): void {
     if (!event.track) return;
 
     this.statsIntervalId = setInterval(async () => {

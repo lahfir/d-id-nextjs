@@ -8,6 +8,23 @@ export interface PresenterConfig {
   };
 }
 
+export interface ClipsPresenter {
+  presenter_id: string;
+  name: string;
+  preview_url?: string;
+  talking_preview_url?: string;
+  video_url?: string;
+  thumbnail_url?: string;
+  is_streamable: boolean;
+  driver_id?: string;
+  idle_video?: string;
+}
+
+export interface PresentersApiResponse {
+  presenters: ClipsPresenter[];
+  token?: string;
+}
+
 export interface StreamMessage {
   type: 'init-stream' | 'stream-text' | 'sdp' | 'ice' | 'delete-stream' | 'error';
   payload: Record<string, unknown>;
@@ -30,16 +47,16 @@ export interface StreamTextMessage extends StreamMessage {
       type: 'text';
       input: string;
       provider: {
-        type: 'elevenlabs';
+        type: 'elevenlabs' | 'microsoft';
         voice_id: string;
-        model_id: string;
+        model_id?: string;
       };
-      ssml: string;
+      ssml: boolean;
     };
     config: {
       stitch: boolean;
     };
-    apiKeyExternal: {
+    apiKeyExternal?: {
       elevenlabs: { key: string };
     };
     session_id: string;

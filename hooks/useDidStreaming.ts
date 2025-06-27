@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { DidClient } from '@/services/didClient';
 import { ConnectionState } from '@/types/did';
 import { ApiConfig } from '@/types/api';
+import { usePresenter } from '@/contexts/PresenterContext';
 
 export interface StreamingState {
   connectionState: ConnectionState;
@@ -15,6 +16,8 @@ export interface StreamingState {
  * Hook for managing D-ID streaming connection and video display
  */
 export function useDidStreaming(config: ApiConfig | null) {
+  const { serviceType, presenterConfig, idleVideoUrl, setOnModeChange } = usePresenter();
+
   const [state, setState] = useState<StreamingState>({
     connectionState: {
       isConnecting: false,
@@ -34,22 +37,47 @@ export function useDidStreaming(config: ApiConfig | null) {
   const lastStreamTimeRef = useRef<number>(0);
 
   /**
-   * Initialize D-ID client when config changes
+   * Initialise client once, then update its mode on presenter changes.
    */
   useEffect(() => {
     if (!config) return;
-    didClientRef.current = new DidClient(config);
-  }, [config]);
+
+    if (!didClientRef.current) {
+      didClientRef.current = new DidClient(config, serviceType, presenterConfig);
+      return;
+    }
+
+    // Update existing client when user switches Clips/Talks or presenter.
+    didClientRef.current.updateMode(serviceType, presenterConfig);
+  }, [config, serviceType, presenterConfig]);
 
   /**
-   * Set idle video source based on service type
+   * Set up disconnect callback for presenter changes
+   */
+  useEffect(() => {
+    const disconnect = () => {
+      if (didClientRef.current && state.connectionState.isConnected) {
+        didClientRef.current.disconnect();
+      }
+    };
+    setOnModeChange(disconnect);
+  }, [setOnModeChange, state.connectionState.isConnected]);
+
+  /**
+   * Set idle video source based on context
    */
   const idleVideoSrc = useMemo(() => {
-    if (!config) return null;
-    return config.didService === 'clips'
+    // For clips mode, try to use the presenter's video URL if available
+    // But fallback to local videos if there are issues
+    if (serviceType === 'clips' && idleVideoUrl) {
+      return idleVideoUrl;
+    }
+
+    // Fallback to local idle videos
+    return serviceType === 'clips'
       ? '/alex_v2_idle.mp4'
       : '/emma_idle.mp4';
-  }, [config]);
+  }, [serviceType, idleVideoUrl]);
 
   /**
    * Connects to D-ID streaming service
@@ -71,7 +99,7 @@ export function useDidStreaming(config: ApiConfig | null) {
         },
         onStreamEvent: (status) => {
           console.log('Stream event received:', status);
-          
+
           // Log timing for debugging
           if (status === 'started') {
             console.log('Stream started at:', new Date().toISOString());
@@ -79,7 +107,7 @@ export function useDidStreaming(config: ApiConfig | null) {
             console.log('Stream completed at:', new Date().toISOString());
             const streamDuration = Date.now() - lastStreamTimeRef.current;
             console.log('Stream duration:', streamDuration + 'ms');
-            
+
             // WORKAROUND: Add delay after stream completion to let ElevenLabs reset
             setTimeout(() => {
               console.log('ElevenLabs reset delay completed - ready for next message');
@@ -87,7 +115,7 @@ export function useDidStreaming(config: ApiConfig | null) {
               setState(prev => ({ ...prev, isStreaming: false }));
             }, 2000);
           }
-          
+
           setState(prev => ({
             ...prev,
             streamStatus: status,
@@ -142,11 +170,11 @@ export function useDidStreaming(config: ApiConfig | null) {
 
     try {
       lastStreamTimeRef.current = Date.now();
-      
+
       // WORKAROUND: Use index 0 for all messages to treat each as "first" for ElevenLabs
       console.log('Sending message with index 0 (workaround for ElevenLabs)');
       didClientRef.current.sendTextMessage(text, 0);
-      
+
       // Still increment our internal counter for logging
       messageIndexRef.current++;
     } catch (error) {
