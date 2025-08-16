@@ -8,7 +8,12 @@
       "Bash(rm:*)",
       "WebFetch(domain:docs.d-id.com)",
       "Bash(sed:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(source:*)",
+      "Bash(npx vercel:*)"
     ],
     "deny": []
   }

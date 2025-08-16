@@ -29,7 +29,7 @@ export const DEEPGRAM_CONFIG = {
 
 export const ELEVENLABS_CONFIG = {
   model_id: 'eleven_turbo_v2_5',
-  voice_id: 'nPczCjzI2devNBz1zQrb',
+  voice_id: 'FGY2WhTYpPnrIDTdsKH5',
 } as const;
 
 export const SYSTEM_PROMPT = 'You are a helpful Spanish assistant that can answer questions and help with tasks.';
