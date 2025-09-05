@@ -61,7 +61,14 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
       const response = await fetch('/api/presenters');
       if (!response.ok) throw new Error('Failed to fetch presenters');
       const data = await response.json();
-      setPresenters(data.presenters || []);
+      // Deduplicate presenters by presenter_id
+      const uniquePresenters = data.presenters?.reduce((acc: ClipsPresenter[], presenter: ClipsPresenter) => {
+        if (!acc.some(p => p.presenter_id === presenter.presenter_id)) {
+          acc.push(presenter);
+        }
+        return acc;
+      }, []) || [];
+      setPresenters(uniquePresenters);
     } catch (err) {
       setError('Failed to load presenters. Please try again.');
       console.error('Error fetching presenters:', err);
