@@ -12,9 +12,6 @@ interface VoiceRecorderProps {
   disabled?: boolean;
 }
 
-/**
- * Component for voice recording with minimal design
- */
 export function VoiceRecorder({
   isRecording,
   isProcessing,
@@ -24,102 +21,45 @@ export function VoiceRecorder({
   onTranscription,
   disabled = false,
 }: VoiceRecorderProps) {
-
-  /**
-   * Handles recording start
-   */
   const handleMouseDown = useCallback(async () => {
     if (disabled || isProcessing) return;
     await onRecordStart();
   }, [disabled, isProcessing, onRecordStart]);
 
-  /**
-   * Handles recording stop and processes transcription
-   */
   const handleMouseUp = useCallback(async () => {
     if (!isRecording) return;
-
     const transcription = await onRecordStop();
-    if (transcription) {
-      onTranscription(transcription);
-    }
+    if (transcription) onTranscription(transcription);
   }, [isRecording, onRecordStop, onTranscription]);
 
-  /**
-   * Handles mouse leave (cancel recording)
-   */
   const handleMouseLeave = useCallback(async () => {
     if (!isRecording) return;
-
     const transcription = await onRecordCancel();
-    if (transcription) {
-      onTranscription(transcription);
-    }
+    if (transcription) onTranscription(transcription);
   }, [isRecording, onRecordCancel, onTranscription]);
 
-  /**
-   * Gets button styling based on state
-   */
-  const getButtonClass = () => {
-    const baseClass = "relative w-16 h-16 rounded-full transition-all duration-200 select-none flex items-center justify-center border";
-
-    if (disabled || isProcessing) {
-      return `${baseClass} bg-white/5 text-white/30 cursor-not-allowed border-white/10`;
-    }
-
-    if (isRecording) {
-      return `${baseClass} bg-red-500/20 text-red-400 border-red-500/30 animate-pulse`;
-    }
-
-    return `${baseClass} bg-white/10 text-white border-white/20 hover:bg-white/20 hover:border-white/30 active:scale-95`;
-  };
-
-  /**
-   * Gets button icon based on state
-   */
-  const getButtonIcon = () => {
-    if (isProcessing) {
-      return (
-        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-      );
-    }
-
-    if (isRecording) {
-      return (
-        <div className="w-4 h-4 bg-red-400 rounded-sm"></div>
-      );
-    }
-
-    return (
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
-      </svg>
-    );
-  };
-
-  /**
-   * Gets status text based on state
-   */
-  const getStatusText = () => {
-    if (isProcessing) return 'Processing...';
-    if (isRecording) return 'Release to send';
-    return 'Hold to record';
-  };
-
-  /**
-   * Gets status color based on state
-   */
-  const getStatusColor = () => {
-    if (disabled || isProcessing) return 'text-white/40';
-    if (isRecording) return 'text-red-400';
-    return 'text-white/60';
-  };
-
   return (
-    <div className="flex flex-col items-center space-y-4">
+    <div className="flex flex-col items-center gap-4">
       {/* Record Button */}
       <button
-        className={getButtonClass()}
+        className="relative w-16 h-16 rounded-full flex items-center justify-center select-none transition-all duration-200"
+        style={{
+          background: isRecording
+            ? 'var(--danger-muted)'
+            : disabled || isProcessing
+              ? 'rgba(255,255,255,0.03)'
+              : 'var(--copper-glow)',
+          border: isRecording
+            ? '2px solid rgba(248, 113, 113, 0.4)'
+            : `2px solid ${disabled || isProcessing ? 'var(--border-subtle)' : 'var(--border-copper)'}`,
+          color: isRecording
+            ? 'var(--danger)'
+            : disabled || isProcessing
+              ? 'var(--text-muted)'
+              : 'var(--copper)',
+          cursor: disabled || isProcessing ? 'not-allowed' : 'pointer',
+          boxShadow: isRecording ? '0 0 20px rgba(248, 113, 113, 0.2)' : 'var(--glow-copper-sm)',
+        }}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
@@ -127,54 +67,69 @@ export function VoiceRecorder({
         onTouchEnd={handleMouseUp}
         disabled={disabled || isProcessing}
       >
-        {getButtonIcon()}
+        {isProcessing ? (
+          <div className="w-5 h-5 rounded-full animate-spin" style={{
+            border: '2px solid var(--border-subtle)',
+            borderTopColor: 'var(--copper)',
+          }} />
+        ) : isRecording ? (
+          <div className="w-5 h-5 rounded-sm" style={{ background: 'var(--danger)' }} />
+        ) : (
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z" />
+          </svg>
+        )}
 
-        {/* Recording pulse effect */}
         {isRecording && (
-          <div className="absolute inset-0 rounded-full bg-red-500/10 animate-ping"></div>
+          <div className="absolute inset-0 rounded-full animate-pulse-copper" />
         )}
       </button>
 
-      {/* Status Text */}
+      {/* Status */}
       <div className="text-center space-y-1">
-        <p className={`text-xs font-medium transition-colors duration-200 ${getStatusColor()}`}>
-          {getStatusText()}
+        <p className="text-xs font-medium" style={{
+          color: isRecording ? 'var(--danger)' : disabled || isProcessing ? 'var(--text-muted)' : 'var(--text-secondary)',
+        }}>
+          {isProcessing ? 'Processing...' : isRecording ? 'Release to send' : 'Hold to record'}
         </p>
-
-        {/* Instructions */}
         {!isRecording && !isProcessing && (
-          <p className="text-xs text-white/40 max-w-xs">
-            Hold and speak clearly
-          </p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Hold and speak clearly</p>
         )}
       </div>
 
-      {/* Recording Visualization */}
+      {/* Waveform */}
       {isRecording && (
-        <div className="flex items-center space-x-1 animate-in fade-in duration-200">
-          {[...Array(4)].map((_, i) => (
+        <div className="flex items-end gap-0.5 animate-fade-in">
+          {[10, 16, 8, 20, 12, 18, 14].map((h, i) => (
             <div
               key={i}
-              className="w-0.5 bg-red-400 rounded-full animate-pulse"
+              className="w-0.5 rounded-full"
               style={{
-                height: `${Math.random() * 12 + 6}px`,
-                animationDelay: `${i * 0.1}s`,
-                animationDuration: '0.6s'
+                background: 'var(--danger)',
+                animation: `waveform 0.6s ease-in-out infinite`,
+                animationDelay: `${i * 0.08}s`,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ['--wave-height' as any]: `${h}px`,
+                height: '4px',
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Processing Animation */}
+      {/* Processing dots */}
       {isProcessing && (
-        <div className="flex items-center space-x-2 animate-in fade-in duration-200">
-          <div className="flex space-x-1">
-            <div className="w-1 h-1 bg-white/60 rounded-full animate-bounce"></div>
-            <div className="w-1 h-1 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-1 h-1 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+        <div className="flex items-center gap-2 animate-fade-in">
+          <div className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full animate-breathe"
+                style={{ background: 'var(--copper)', animationDelay: `${i * 0.2}s` }}
+              />
+            ))}
           </div>
-          <span className="text-xs text-white/60">Processing...</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Processing...</span>
         </div>
       )}
     </div>

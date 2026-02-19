@@ -1,26 +1,452 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════
+   COPPER CIRCUIT — Warm Industrial Luxury
+   Deep charcoal + copper/amber metallic accents
+   ═══════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base palette */
+  --bg-primary: #0C0A09;
+  --bg-secondary: #1C1917;
+  --bg-tertiary: #292524;
+  --bg-elevated: #1A1714;
+
+  /* Copper spectrum */
+  --copper: #EA7E41;
+  --copper-light: #F09D5E;
+  --copper-dark: #C86F33;
+  --copper-glow: rgba(234, 126, 65, 0.15);
+  --copper-subtle: rgba(234, 126, 65, 0.06);
+  --amber: #F5A623;
+  --amber-glow: rgba(245, 166, 35, 0.12);
+
+  /* Text */
+  --text-primary: #FAFAF9;
+  --text-secondary: #A8A29E;
+  --text-tertiary: #78716C;
+  --text-muted: #57534E;
+
+  /* Semantic */
+  --success: #4ADE80;
+  --success-muted: rgba(74, 222, 128, 0.15);
+  --danger: #F87171;
+  --danger-muted: rgba(248, 113, 113, 0.12);
+  --warning: #FBBF24;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-copper: rgba(234, 126, 65, 0.3);
+
+  /* Shadows */
+  --glow-copper: 0 0 40px rgba(234, 126, 65, 0.15), 0 0 80px rgba(234, 126, 65, 0.05);
+  --glow-copper-sm: 0 0 20px rgba(234, 126, 65, 0.1);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  /* Fonts */
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  /* Transitions */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ─── Base ─── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Blueprint grid background ─── */
+.bg-blueprint {
+  background-image:
+    linear-gradient(rgba(234, 126, 65, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 126, 65, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.bg-blueprint-dense {
+  background-image:
+    linear-gradient(rgba(234, 126, 65, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 126, 65, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(234, 126, 65, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 126, 65, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
+}
+
+/* ─── Noise texture overlay ─── */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Copper glow effect ─── */
+.copper-glow {
+  box-shadow: var(--glow-copper);
+}
+
+.copper-glow-sm {
+  box-shadow: var(--glow-copper-sm);
+}
+
+/* ─── Video radiance ─── */
+.video-radiance {
+  position: relative;
+}
+
+.video-radiance::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(234, 126, 65, 0.2) 0%,
+    rgba(234, 126, 65, 0.05) 30%,
+    transparent 50%,
+    rgba(245, 166, 35, 0.05) 70%,
+    rgba(245, 166, 35, 0.15) 100%
+  );
+  z-index: -1;
+  filter: blur(12px);
+}
+
+/* ─── LED indicator ─── */
+.led-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.led-indicator::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.3;
+  filter: blur(4px);
+}
+
+.led-copper {
+  background: var(--copper);
+}
+
+.led-green {
+  background: var(--success);
+}
+
+.led-red {
+  background: var(--danger);
+}
+
+.led-amber {
+  background: var(--amber);
+}
+
+.led-off {
+  background: var(--text-muted);
+}
+
+.led-off::after {
+  display: none;
+}
+
+/* ─── Copper border accent ─── */
+.copper-border-top {
+  position: relative;
+}
+
+.copper-border-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--copper) 20%,
+    var(--copper-light) 50%,
+    var(--copper) 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
+}
+
+/* ─── Panel styles ─── */
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.panel-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-elevated);
+}
+
+.panel-float {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  box-shadow: var(--shadow-float);
+}
+
+/* ─── Scrollbar ─── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ─── Animations ─── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-copper {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 126, 65, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(234, 126, 65, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 4px; }
+  50% { height: var(--wave-height, 16px); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s var(--ease-out-expo) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s var(--ease-out-expo) forwards;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.4s var(--ease-out-expo) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s var(--ease-out-expo) forwards;
+}
+
+.animate-pulse-copper {
+  animation: pulse-copper 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(234, 126, 65, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+/* ─── Stagger delays ─── */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* ─── Button base ─── */
+.btn-copper {
+  background: linear-gradient(135deg, var(--copper-dark), var(--copper));
+  color: var(--bg-primary);
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out-quart);
+}
+
+.btn-copper:hover {
+  background: linear-gradient(135deg, var(--copper), var(--copper-light));
+  box-shadow: var(--glow-copper-sm);
+  transform: translateY(-1px);
+}
+
+.btn-copper:active {
+  transform: translateY(0);
+}
+
+.btn-copper:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out-quart);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ─── Input base ─── */
+.input-base {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  transition: all 0.2s var(--ease-out-quart);
+}
+
+.input-base::placeholder {
+  color: var(--text-muted);
+}
+
+.input-base:focus {
+  border-color: var(--border-copper);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px var(--copper-subtle);
+}
+
+.input-base:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── Tag / Label ─── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tag-copper {
+  background: var(--copper-glow);
+  color: var(--copper-light);
+  border: 1px solid rgba(234, 126, 65, 0.2);
+}
+
+.tag-success {
+  background: var(--success-muted);
+  color: var(--success);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.tag-danger {
+  background: var(--danger-muted);
+  color: var(--danger);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+/* ─── Typography helpers ─── */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.text-copper {
+  color: var(--copper);
+}
+
+.text-copper-light {
+  color: var(--copper-light);
+}
+
+/* ─── Utility: vignette ─── */
+.vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, var(--bg-primary) 100%);
+  pointer-events: none;
 }

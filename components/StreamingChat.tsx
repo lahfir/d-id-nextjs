@@ -12,9 +12,6 @@ import { DeepgramClient } from '@/lib/services/deepgramClient';
 import { OpenAIClient } from '@/lib/services/openaiClient';
 import { getApiConfig } from '@/lib/utils/env';
 
-/**
- * Main streaming chat component with simple compact interface
- */
 export function StreamingChat() {
   const [clients, setClients] = useState<{
     deepgram: DeepgramClient | null;
@@ -25,9 +22,6 @@ export function StreamingChat() {
   const [isInterfaceOpen, setIsInterfaceOpen] = useState(true);
   const [showPresenterSelector, setShowPresenterSelector] = useState(false);
 
-  /**
-   * Initialize API clients
-   */
   useEffect(() => {
     try {
       const config = getApiConfig();
@@ -42,10 +36,8 @@ export function StreamingChat() {
     }
   }, []);
 
-  // Memoize config to prevent recreating DidClient on every render
   const config = useMemo(() => {
     if (!clients.deepgram || !clients.openai) return null;
-
     try {
       return getApiConfig();
     } catch (error) {
@@ -58,18 +50,13 @@ export function StreamingChat() {
   const voiceRecording = useVoiceRecording(clients.deepgram);
   const conversation = useConversation(clients.openai);
 
-  /**
-   * Handles text message submission (from both text input and voice)
-   */
   const handleSendMessage = useCallback(async (userMessage: string) => {
     if (!streaming.isReady()) {
       alert('Please connect to the streaming service first');
       return;
     }
-
     try {
       const assistantResponse = await conversation.sendMessage(userMessage);
-      // Use simple incremental indexing like vanilla version
       await streaming.sendTextMessage(assistantResponse);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -78,66 +65,64 @@ export function StreamingChat() {
     }
   }, [streaming, conversation]);
 
-  /**
-   * Handles voice transcription
-   */
   const handleVoiceTranscription = useCallback((transcription: string) => {
     console.log('Voice transcription:', transcription);
     handleSendMessage(transcription);
   }, [handleSendMessage]);
 
-  /**
-   * Toggle interface visibility
-   */
   const toggleInterface = useCallback(() => {
     setIsInterfaceOpen(!isInterfaceOpen);
   }, [isInterfaceOpen]);
 
-
-  /**
-   * Connection status indicator
-   */
   const getConnectionStatus = () => {
     const status = streaming.getConnectionStatus();
     return {
       isConnected: status.status === 'connected',
       isConnecting: status.status === 'connecting',
       statusText: status.message,
-      statusColor: status.status === 'connected' ? 'text-green-500' :
-        status.status === 'connecting' ? 'text-orange-500' :
-          status.status === 'error' ? 'text-red-500' : 'text-gray-500'
     };
   };
 
-  /**
-   * Show initialization error if any
-   */
+  // ── Init error screen ──
   if (initError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="max-w-md w-full bg-gray-900/80 backdrop-blur-sm rounded-lg border border-gray-800 p-8 text-center">
-          <div className="text-red-500 text-4xl mb-4">⚠</div>
-          <h2 className="text-xl font-medium text-white mb-3">
+      <div className="min-h-screen flex items-center justify-center bg-blueprint" style={{ background: 'var(--bg-primary)' }}>
+        <div className="panel-elevated max-w-md w-full p-10 text-center animate-scale-in">
+          <div className="w-12 h-12 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'var(--danger-muted)' }}>
+            <svg className="w-6 h-6" style={{ color: 'var(--danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="font-display text-2xl mb-3" style={{ color: 'var(--text-primary)' }}>
             Configuration Error
           </h2>
-          <p className="text-gray-400 mb-4 text-sm leading-relaxed">{initError}</p>
-          <p className="text-xs text-gray-500">
-            Please check your environment variables
+          <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>{initError}</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Check your environment variables in .env.local
           </p>
         </div>
       </div>
     );
   }
 
-  /**
-   * Show loading state while initializing
-   */
+  // ── Loading screen ──
   if (!clients.deepgram || !clients.openai) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 text-sm">Initializing...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="text-center animate-fade-in">
+          <div className="relative w-12 h-12 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full animate-spin" style={{
+              border: '2px solid var(--border-subtle)',
+              borderTopColor: 'var(--copper)',
+            }} />
+            <div className="absolute inset-2 rounded-full animate-spin" style={{
+              border: '2px solid transparent',
+              borderTopColor: 'var(--copper-light)',
+              animationDirection: 'reverse',
+              animationDuration: '0.8s',
+            }} />
+          </div>
+          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Initializing systems...</p>
         </div>
       </div>
     );
@@ -147,8 +132,8 @@ export function StreamingChat() {
 
   return (
     <ErrorBoundary>
-      <div className="relative min-h-screen overflow-hidden bg-black">
-        {/* Full-screen Video Background */}
+      <div className="relative min-h-screen overflow-hidden bg-blueprint noise-overlay" style={{ background: 'var(--bg-primary)' }}>
+        {/* ═══ Video Background ═══ */}
         <div className="absolute inset-0">
           <VideoDisplay
             streamVideo={streaming.streamVideo}
@@ -158,168 +143,228 @@ export function StreamingChat() {
           />
         </div>
 
-        {/* Main Interface */}
-        <div className="relative z-10 min-h-screen">
-          {/* Minimal Top Status */}
-          <div className="absolute top-4 left-4 flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${connectionStatus.isConnected ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-            <span className="text-white/80 text-sm">D-ID Assistant</span>
-            {streaming.isVideoPlaying && (
-              <div className="flex items-center space-x-1 bg-red-500/20 px-2 py-1 rounded text-xs text-red-400">
-                <div className="w-1 h-1 bg-red-500 rounded-full animate-pulse"></div>
-                <span>LIVE</span>
-              </div>
-            )}
-          </div>
+        {/* ═══ Content Layer ═══ */}
+        <div className="relative z-10 min-h-screen flex flex-col">
 
-          {/* Compact Chat Interface */}
-          <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 w-full max-w-sm md:max-w-md mx-4 md:mx-0">
-            {/* Toggle Button (when minimized) */}
+          {/* ── Top Bar ── */}
+          <header className="flex items-center justify-between px-5 py-4 animate-slide-down" style={{ opacity: 0, animationFillMode: 'forwards' }}>
+            {/* Left: Brand + Status */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                {/* Geometric logo mark */}
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
+                  background: 'linear-gradient(135deg, var(--copper-dark), var(--copper))',
+                  boxShadow: 'var(--glow-copper-sm)',
+                }}>
+                  <svg className="w-4 h-4" style={{ color: 'var(--bg-primary)' }} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="font-display text-lg leading-none tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                    D-ID Assistant
+                  </h1>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    Streaming Studio
+                  </p>
+                </div>
+              </div>
+
+              {/* Status LED */}
+              <div className="flex items-center gap-2 ml-4">
+                <div className={`led-indicator ${connectionStatus.isConnected ? 'led-green' : connectionStatus.isConnecting ? 'led-amber' : 'led-off'}`} />
+                <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                  {connectionStatus.statusText}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Controls */}
+            <div className="flex items-center gap-2">
+              {streaming.isVideoPlaying && (
+                <div className="tag tag-danger animate-fade-in">
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--danger)' }} />
+                  LIVE
+                </div>
+              )}
+
+              {/* Presenter button */}
+              <button
+                onClick={() => setShowPresenterSelector(true)}
+                disabled={connectionStatus.isConnected || connectionStatus.isConnecting}
+                className="btn-ghost flex items-center gap-1.5 !px-3 !py-1.5 !text-xs disabled:opacity-30"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Presenter
+              </button>
+
+              {/* Connect / Disconnect */}
+              {!connectionStatus.isConnected ? (
+                <button
+                  onClick={streaming.connect}
+                  disabled={connectionStatus.isConnecting}
+                  className="btn-copper flex items-center gap-1.5 !text-xs"
+                >
+                  {connectionStatus.isConnecting ? (
+                    <>
+                      <div className="w-3 h-3 rounded-full animate-spin" style={{
+                        border: '2px solid rgba(12, 10, 9, 0.3)',
+                        borderTopColor: 'var(--bg-primary)',
+                      }} />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Connect
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={streaming.disconnect}
+                  className="btn-ghost flex items-center gap-1.5 !text-xs !border-red-500/20 hover:!border-red-500/40 hover:!bg-red-500/10"
+                  style={{ color: 'var(--danger)' }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Disconnect
+                </button>
+              )}
+            </div>
+          </header>
+
+          {/* ── Spacer (pushes chat to bottom) ── */}
+          <div className="flex-1" />
+
+          {/* ── Bottom Chat Panel ── */}
+          <div className="px-4 pb-4 md:px-6 md:pb-6">
+            {/* Collapsed toggle */}
             {!isInterfaceOpen && (
-              <div className="mb-2 flex justify-end">
+              <div className="flex justify-end mb-2 animate-fade-in">
                 <button
                   onClick={toggleInterface}
-                  className="p-3 bg-black/60 backdrop-blur-sm border border-white/20 text-white rounded-full hover:bg-black/80 transition-all duration-200 shadow-lg"
+                  className="w-12 h-12 rounded-full flex items-center justify-center copper-glow-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--copper-dark), var(--copper))',
+                  }}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" style={{ color: 'var(--bg-primary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </button>
               </div>
             )}
 
-            {/* Main Chat Container */}
-            <div className={`transition-all duration-300 ${isInterfaceOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
-              }`}>
-              <div className="bg-black/60 backdrop-blur-lg rounded-lg border border-white/20 shadow-2xl">
-                {/* Header */}
-                <div className="flex items-center justify-between p-3 border-b border-white/10">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white text-sm font-medium">Chat</span>
-                    <div className={`w-1.5 h-1.5 rounded-full ${connectionStatus.isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            {/* Chat container */}
+            <div
+              className={`max-w-lg ml-auto transition-all duration-500 ${
+                isInterfaceOpen
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-6 pointer-events-none'
+              }`}
+              style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+            >
+              <div className="panel-float copper-border-top overflow-hidden">
+                {/* Chat header */}
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Conversation</span>
+                    <div className={`led-indicator ${connectionStatus.isConnected ? 'led-green' : 'led-off'}`} style={{ width: '6px', height: '6px' }} />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {/* Presenter Selector Button */}
-                    <button
-                      onClick={() => setShowPresenterSelector(true)}
-                      disabled={connectionStatus.isConnected || connectionStatus.isConnecting}
-                      className={`p-1 transition-colors ${connectionStatus.isConnected || connectionStatus.isConnecting
-                        ? 'text-white/30 cursor-not-allowed'
-                        : 'text-white/60 hover:text-white'
-                        }`}
-                      title={
-                        connectionStatus.isConnected
-                          ? 'Disconnect to change presenter'
-                          : 'Change Presenter'
-                      }
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </button>
-                    {/* Connection Controls */}
-                    {!connectionStatus.isConnected ? (
+                  <div className="flex items-center gap-1">
+                    {conversation.messages.length > 0 && (
                       <button
-                        onClick={streaming.connect}
-                        disabled={connectionStatus.isConnecting}
-                        className="px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 rounded text-xs hover:bg-green-500/30 disabled:opacity-50 flex items-center space-x-1"
+                        onClick={conversation.clearConversation}
+                        className="p-1.5 rounded-md transition-colors hover:bg-white/5"
+                        style={{ color: 'var(--text-muted)' }}
+                        title="Clear conversation"
                       >
-                        {connectionStatus.isConnecting ? (
-                          <>
-                            <div className="w-2 h-2 border border-green-400/50 border-t-green-400 rounded-full animate-spin"></div>
-                            <span>Connecting...</span>
-                          </>
-                        ) : (
-                          <span>Connect</span>
-                        )}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={streaming.disconnect}
-                        className="px-3 py-1 bg-red-500/20 border border-red-500/30 text-red-400 rounded text-xs hover:bg-red-500/30"
-                      >
-                        Disconnect
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                       </button>
                     )}
                     <button
                       onClick={toggleInterface}
-                      className="p-1 text-white/60 hover:text-white transition-colors"
+                      className="p-1.5 rounded-md transition-colors hover:bg-white/5"
+                      style={{ color: 'var(--text-muted)' }}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                   </div>
                 </div>
 
-                {/* Chat Interface with Integrated Voice */}
-                <div className="p-3">
+                {/* Chat content */}
+                <div className="p-4">
                   <ChatInterface
                     messages={conversation.messages}
                     onSendMessage={handleSendMessage}
                     isLoading={conversation.isLoading}
                     disabled={!streaming.isReady()}
-                    placeholder={streaming.isReady() ? "Type your message..." : "Connect to start"}
+                    placeholder={streaming.isReady() ? "Type your message..." : "Connect to start chatting"}
                     voiceRecording={voiceRecording}
                     onVoiceTranscription={handleVoiceTranscription}
                   />
                 </div>
-
-                {/* Clear Button */}
-                {conversation.messages.length > 0 && (
-                  <div className="px-3 pb-3">
-                    <button
-                      onClick={conversation.clearConversation}
-                      className="w-full px-3 py-1 bg-white/5 border border-white/10 text-white/60 rounded text-xs hover:bg-white/10 hover:text-white/80 transition-all"
-                    >
-                      Clear Chat
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Error Display */}
+          {/* ── Error Toast ── */}
           {(conversation.error || voiceRecording.error || streaming.connectionState.error) && (
-            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 max-w-md w-full mx-4">
-              <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/20 rounded-lg p-3 animate-in slide-in-from-top duration-200">
-                <div className="flex items-start space-x-2">
-                  <div className="text-red-500 text-sm">⚠</div>
-                  <div className="flex-1">
-                    <div className="text-red-400 text-xs space-y-1">
-                      {streaming.connectionState.error && (
-                        <div>
-                          <div className="font-medium">D-ID Streaming Error:</div>
-                          <div className="text-red-300 break-words">{streaming.connectionState.error}</div>
-                        </div>
-                      )}
-                      {conversation.error && (
-                        <div>
-                          <div className="font-medium">AI Error:</div>
-                          <div className="text-red-300">{conversation.error}</div>
-                        </div>
-                      )}
-                      {voiceRecording.error && (
-                        <div>
-                          <div className="font-medium">Voice Error:</div>
-                          <div className="text-red-300">{voiceRecording.error}</div>
-                        </div>
-                      )}
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 max-w-md w-full px-4 animate-slide-down" style={{ zIndex: 50 }}>
+              <div className="panel-elevated overflow-hidden" style={{ borderColor: 'rgba(248, 113, 113, 0.2)' }}>
+                <div className="h-0.5" style={{ background: 'linear-gradient(90deg, var(--danger), transparent)' }} />
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--danger-muted)' }}>
+                      <svg className="w-4 h-4" style={{ color: 'var(--danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
+                      </svg>
                     </div>
-                    <button
-                      onClick={() => {
-                        conversation.clearError();
-                        voiceRecording.clearError();
-                        // Clear streaming error by reconnecting
-                        if (streaming.connectionState.error) {
-                          streaming.disconnect();
-                        }
-                      }}
-                      className="mt-2 text-xs text-red-400/80 hover:text-red-400 underline"
-                    >
-                      Dismiss
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="space-y-1.5 text-xs">
+                        {streaming.connectionState.error && (
+                          <div>
+                            <span className="font-semibold" style={{ color: 'var(--danger)' }}>Stream: </span>
+                            <span className="break-words" style={{ color: 'var(--text-secondary)' }}>{streaming.connectionState.error}</span>
+                          </div>
+                        )}
+                        {conversation.error && (
+                          <div>
+                            <span className="font-semibold" style={{ color: 'var(--danger)' }}>AI: </span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{conversation.error}</span>
+                          </div>
+                        )}
+                        {voiceRecording.error && (
+                          <div>
+                            <span className="font-semibold" style={{ color: 'var(--danger)' }}>Voice: </span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{voiceRecording.error}</span>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          conversation.clearError();
+                          voiceRecording.clearError();
+                          if (streaming.connectionState.error) streaming.disconnect();
+                        }}
+                        className="mt-2 text-xs font-medium transition-colors"
+                        style={{ color: 'var(--text-muted)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -327,11 +372,9 @@ export function StreamingChat() {
           )}
         </div>
 
-        {/* Presenter Selector Modal */}
+        {/* ═══ Presenter Selector Modal ═══ */}
         {showPresenterSelector && (
-          <PresenterSelector
-            onClose={() => setShowPresenterSelector(false)}
-          />
+          <PresenterSelector onClose={() => setShowPresenterSelector(false)} />
         )}
       </div>
     </ErrorBoundary>
