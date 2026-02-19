@@ -1,256 +1,338 @@
-# D-ID Next.js Live Streaming Demo
+# D-ID Next.js Live Streaming Application
 
-A modern Next.js application showcasing D-ID's live streaming capabilities with AI-powered conversation, voice recognition, and dynamic presenter selection.
+Real-time AI avatar streaming with conversational AI, voice recognition, and text-to-speech -- built on Next.js 15, TypeScript, and WebRTC.
 
-## ✨ Enhanced Features
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Next.js](https://img.shields.io/badge/Next.js-15.3-black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- 🎭 **Dynamic Presenter Selection**: Choose from D-ID's presenter library or use custom images
-- 🎥 **Real-time Avatar Streaming**: D-ID WebRTC streaming with interactive avatars
-- 🎤 **Voice Recognition**: Deepgram Nova-2 speech-to-text transcription  
-- 🤖 **AI Chat**: GPT-4o integration for intelligent conversations
-- 💬 **Multi-Modal Input**: Support both text and voice interactions
-- 🎨 **Modern Glass-morphism UI**: Responsive design with Tailwind CSS v4
-- 🔧 **TypeScript**: Fully typed for better development experience
-- 🎬 **Interactive Previews**: Hover to see presenter talking previews
-- 🔄 **Context-Based Architecture**: Global state management for seamless switching
-- 🛡️ **Advanced Error Handling**: Detailed error reporting with fallback systems
+## Features
 
-## Prerequisites
+- **Real-time avatar streaming** via D-ID WebRTC with interactive lip-synced avatars
+- **Conversational AI** powered by OpenAI GPT-4.1-nano for low-latency chat
+- **Voice recognition** using Deepgram Nova-3 speech-to-text (54% WER improvement over Nova-2)
+- **Text-to-speech** via ElevenLabs Flash v2.5 (<75ms latency)
+- **Dynamic presenter selection** -- choose from D-ID's presenter library or use custom images
+- **Dual streaming modes** -- Clips (pre-trained presenters) and Talks (custom images)
+- **Server-side API proxying** -- OpenAI and Deepgram keys never exposed to browser
+- **Structured logging** -- level-aware, context-tagged, auto-suppressed in production
+- **Glass-morphism UI** with responsive design built on Tailwind CSS v4
 
-You'll need API keys for the following services:
+## Architecture Overview
 
-- [D-ID](https://www.d-id.com/) - For avatar streaming
-- [OpenAI](https://platform.openai.com/) - For GPT-4o chat completions
-- [Deepgram](https://deepgram.com/) - For speech-to-text transcription
-- [ElevenLabs](https://elevenlabs.io/) - For voice synthesis
-
-## Setup
-
-1. **Clone and navigate to the project**:
-   ```bash
-   cd d-id-nextjs
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   # or
-   bun install
-   ```
-
-3. **Configure environment variables**:
-   Copy `.env.local` and update with your API keys:
-   ```bash
-   # D-ID API Configuration
-   NEXT_PUBLIC_DID_API_KEY=your_did_api_key_here
-   NEXT_PUBLIC_DID_WEBSOCKET_URL=wss://api.d-id.com
-   # Note: DID_SERVICE is now optional - managed by PresenterContext
-
-   # OpenAI API Configuration
-   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
-
-   # Deepgram API Configuration
-   NEXT_PUBLIC_DEEPGRAM_API_KEY=your_deepgram_api_key_here
-
-   # ElevenLabs API Configuration
-   NEXT_PUBLIC_ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
-   ```
-
-4. **Add idle videos** (optional):
-   Place idle video files in the `public` directory:
-   - `emma_idle.mp4` (for talks service)
-   - `alex_v2_idle.mp4` (for clips service)
-
-5. **Run the development server**:
-   ```bash
-   npm run dev
-   # or
-   bun dev
-   ```
-
-6. **Open [http://localhost:3000](http://localhost:3000)** in your browser
-
-## 🚀 Usage
-
-### Basic Interaction
-1. **Select Presenter**: Click the presenter icon to choose from available presenters or custom images
-2. **Choose Mode**: Toggle between "Clips" (pre-trained presenters) and "Talks" (custom images)
-3. **Connect**: Click the "Connect" button to establish a connection to D-ID streaming
-4. **Chat**: Type messages in the text input or use voice recording
-5. **Voice**: Hold the "Hold to Record" button to capture voice input
-6. **Watch**: The avatar will respond with synthesized speech and lip-sync
-
-### Advanced Features
-- **Presenter Previews**: Hover over presenters in the selection grid to see talking previews
-- **Dynamic Switching**: Change presenters anytime (automatically disconnects and requires reconnection)
-- **Error Handling**: Detailed error messages help troubleshoot connection issues
-- **Fallback System**: If presenter videos fail to load, local videos automatically serve as backups
-
-## 🏗️ Architecture
-
-The application features a modern, context-driven architecture:
-
-### Context-Based State Management
-- `PresenterContext.tsx` - Global presenter state management with automatic disconnect handling
-
-### API Integration
-- `/api/presenters/route.ts` - D-ID presenter API proxy with 30-minute caching
-
-### Services
-- `deepgramClient.ts` - Speech-to-text transcription
-- `openaiClient.ts` - GPT-4o chat completions  
-- `didClient.ts` - Enhanced D-ID WebSocket/WebRTC with dynamic presenter support
-- `webrtcManager.ts` - WebRTC peer connection handling
-
-### Hooks  
-- `useConversation.ts` - Chat history and LLM interactions
-- `useVoiceRecording.ts` - Audio capture and transcription
-- `useDidStreaming.ts` - Context-aware D-ID connection and video streaming
-
-### Components
-- `StreamingChat.tsx` - Main application orchestrator with enhanced error handling
-- `PresenterSelector.tsx` - Dynamic presenter selection with API integration
-- `VideoDisplay.tsx` - Smart video display with automatic fallback system
-- `ChatInterface.tsx` - Text chat with message history
-- `VoiceRecorder.tsx` - Voice recording with visual feedback
-- `StatusPanel.tsx` - Connection and system status
-- `ControlButtons.tsx` - Connect/disconnect controls
-
-## Technical Stack
-
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type safety and better DX
-- **Tailwind CSS** - Utility-first styling
-- **WebRTC** - Real-time peer-to-peer communication
-- **WebSocket** - Real-time messaging with D-ID
-
-## 🛡️ Enhanced Error Handling
-
-The app features comprehensive error handling and debugging:
-
-### Error Display System
-- **Categorized Errors**: Separate display for D-ID Streaming, AI, and Voice errors
-- **Detailed Information**: Shows connection IDs, request IDs for easier debugging
-- **User-Friendly Messages**: Clear, actionable error descriptions
-
-### Debugging Features
-- **API Error Parsing**: Extracts detailed error information from D-ID responses
-- **Console Logging**: Comprehensive logging for development and troubleshooting
-- **Message Tracking**: Full WebSocket message logging with presenter configuration
-- **Connection State Monitoring**: Real-time connection status and error tracking
-
-### Fallback Systems
-- **Video Fallbacks**: Automatic switching from remote to local videos on load failure
-- **API Rate Limiting**: Detection and user notification for API limits
-- **Connection Recovery**: Graceful handling of WebSocket/WebRTC disconnections
-- **Error Boundaries**: React error boundaries for graceful degradation
-
-## Development
-
-### Project Structure
 ```
-├── app/
-│   ├── api/presenters/      # D-ID presenter API proxy with caching
-│   ├── globals.css          # Tailwind CSS v4 configuration
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Main page with PresenterProvider
-├── components/
-│   ├── PresenterSelector.tsx    # Dynamic presenter selection UI
-│   ├── StreamingChat.tsx        # Main orchestrator with error handling
-│   ├── VideoDisplay.tsx         # Smart video display with fallbacks
-│   └── [other components]       # Chat, voice, status components
-├── contexts/
-│   └── PresenterContext.tsx     # Global presenter state management
-├── hooks/                       # Context-aware custom React hooks
-├── services/                    # Enhanced API clients
-├── types/                       # Comprehensive TypeScript definitions
-├── utils/                       # Configuration and constants
-└── public/                      # Static assets and fallback videos
+User Input (text/voice)
+       │
+       ├── Voice ──► Deepgram Nova-3 (/api/transcribe) ──► Transcription
+       │                                                        │
+       └── Text ────────────────────────────────────────────────┤
+                                                                │
+                                                                ▼
+                                              OpenAI GPT-4.1-nano (/api/chat)
+                                                                │
+                                                                ▼
+                                                     D-ID Streaming API
+                                                   (WebSocket + WebRTC)
+                                                                │
+                                                ┌───────────────┤
+                                                ▼               ▼
+                                          ElevenLabs       Video Stream
+                                          Flash v2.5       (WebRTC)
+                                          (TTS via D-ID)       │
+                                                               ▼
+                                                         User Display
 ```
 
-### Code Style & Patterns
-- **Context-Driven Architecture**: Global state management using React Context
-- **Modular Components**: Single-responsibility components with clear interfaces
-- **Custom Hooks**: Context-aware hooks for state management
-- **TypeScript Safety**: Comprehensive type definitions and strict typing
-- **Error-First Design**: Comprehensive error handling and fallback systems
-- **Performance Optimized**: API caching, video preloading, efficient re-rendering
+## Tech Stack
 
-### Build Commands
+| Technology | Version | Purpose |
+|---|---|---|
+| Next.js | 15.3 | React framework with App Router |
+| React | 19 | UI library |
+| TypeScript | 5 | Type safety |
+| Tailwind CSS | v4 | Utility-first styling |
+| Zod | 4.x | Runtime schema validation |
+| D-ID API | Streaming | Avatar streaming (WebSocket + WebRTC) |
+| OpenAI | GPT-4.1-nano | Chat completions |
+| Deepgram | Nova-3 | Speech-to-text |
+| ElevenLabs | Flash v2.5 | Text-to-speech |
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 22+ or Bun 1.x
+- API keys from:
+  - [D-ID](https://studio.d-id.com/account-settings) -- avatar streaming
+  - [OpenAI](https://platform.openai.com/api-keys) -- chat completions
+  - [Deepgram](https://console.deepgram.com/) -- speech-to-text
+  - [ElevenLabs](https://elevenlabs.io/settings/api-keys) -- text-to-speech
+
+### Installation
+
 ```bash
-# Development
-bun run dev
+# Clone
+git clone <repo-url>
+cd d-id-nextjs
 
-# Production build  
-bun run build
+# Install dependencies
+bun install
 
-# Type checking
-bun run type-check
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local with your API keys
 
-# Linting
-bun run lint
+# Run development server
+bun dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Idle Videos (optional)
+
+Place idle video files in the `public/` directory for offline avatar display:
+- `emma_idle.mp4` -- Talks mode fallback
+- `alex_v2_idle.mp4` -- Clips mode fallback
+
+## Project Structure
+
+```
+d-id-nextjs/
+├── app/
+│   ├── api/
+│   │   ├── chat/route.ts           # OpenAI proxy (server-side key)
+│   │   ├── transcribe/route.ts     # Deepgram proxy (server-side key)
+│   │   ├── animations/route.ts     # D-ID animations CRUD
+│   │   ├── images/route.ts         # Image upload handler
+│   │   └── presenters/route.ts     # D-ID presenters with caching
+│   ├── fonts/                      # Local Geist font files
+│   ├── globals.css                 # Tailwind v4 configuration
+│   ├── layout.tsx                  # Root layout
+│   └── page.tsx                    # Entry point with PresenterProvider
+├── components/
+│   ├── StreamingChat.tsx           # Main orchestrator
+│   ├── VideoDisplay.tsx            # WebRTC video with fallback
+│   ├── ChatInterface.tsx           # Text chat with history
+│   ├── PresenterSelector.tsx       # Presenter selection modal
+│   └── ErrorBoundary.tsx           # React error boundary
+├── contexts/
+│   └── PresenterContext.tsx        # Global presenter state
+├── hooks/
+│   ├── useConversation.ts          # Chat history + LLM
+│   ├── useDidStreaming.ts          # D-ID connection + video
+│   ├── useVoiceRecording.ts        # Microphone + transcription
+│   └── index.ts                    # Barrel exports
+├── lib/
+│   ├── errors.ts                   # Custom error classes
+│   ├── services/
+│   │   ├── didClient.ts            # D-ID WebSocket/WebRTC client
+│   │   ├── webrtcManager.ts        # WebRTC peer connection
+│   │   ├── openaiClient.ts         # OpenAI via /api/chat proxy
+│   │   ├── deepgramClient.ts       # Deepgram via /api/transcribe proxy
+│   │   ├── animationService.ts     # D-ID animation management
+│   │   └── index.ts                # Barrel exports
+│   └── utils/
+│       ├── constants.ts            # Config, models, timing, prompts
+│       ├── env.ts                  # Environment validation
+│       ├── logger.ts               # Structured logger
+│       └── index.ts                # Barrel exports
+├── types/
+│   ├── api.ts                      # Client-side API config
+│   ├── conversation.ts             # Chat message types
+│   ├── did.ts                      # D-ID, WebRTC, animation types
+│   └── index.ts                    # Barrel exports
+├── .env.example                    # Environment variable documentation
+├── CLAUDE.md                       # AI assistant guidelines
+└── next.config.ts                  # Next.js configuration
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Scope | Required | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_DID_API_KEY` | Client | Yes | D-ID API key (used for WebSocket auth) |
+| `NEXT_PUBLIC_DID_WEBSOCKET_URL` | Client | No | D-ID WebSocket URL (default: `wss://api.d-id.com`) |
+| `NEXT_PUBLIC_ELEVENLABS_API_KEY` | Client | Yes | ElevenLabs key (sent via D-ID `apiKeyExternal`) |
+| `NEXT_PUBLIC_ELEVENLABS_VOICE_ID` | Client | No | ElevenLabs voice (default: Rachel) |
+| `OPENAI_API_KEY` | Server | Yes | OpenAI key (never sent to browser) |
+| `DEEPGRAM_API_KEY` | Server | Yes | Deepgram key (never sent to browser) |
+
+**Why some keys are client-side**: D-ID's WebSocket requires the API key in the URL auth parameter, and ElevenLabs keys must be sent via D-ID's `apiKeyExternal` WebSocket payload for Talks mode TTS.
+
+## API Reference
+
+### `POST /api/chat`
+Proxies chat requests to OpenAI.
+
+**Request body:**
+```json
+{ "messages": [{ "role": "user", "content": "Hello" }] }
+```
+**Response:** `{ "content": "Hi there!" }`
+
+### `POST /api/transcribe`
+Proxies audio transcription to Deepgram.
+
+**Request:** Raw audio body with `Content-Type: audio/wav`
+**Response:** Deepgram transcription response
+
+### `GET /api/presenters`
+Lists D-ID presenters (30-minute server cache).
+
+**Response:** `{ "presenters": [...] }`
+
+### `POST /api/animations`
+Creates a D-ID animation. Request body validated with Zod.
+
+**Request body:**
+```json
+{ "source_url": "https://example.com/image.jpg", "config": { "stitch": true } }
+```
+
+### `GET /api/animations?id=<animation_id>`
+Gets animation status by ID.
+
+### `DELETE /api/animations?id=<animation_id>`
+Deletes an animation.
+
+### `POST /api/images`
+Uploads an image for use with D-ID animations.
+
+## Development Guide
+
+### Commands
+
+```bash
+bun dev          # Development server
+bun run build    # Production build
+bun run lint     # ESLint
+bun start        # Start production server
+```
+
+### Code Patterns
+
+**Structured Logging** -- All modules use the shared logger:
+```typescript
+import { createLogger } from '@/lib/utils/logger';
+const log = createLogger('ModuleName');
+log.info('Connection established', { streamId: 'abc123' });
+```
+
+Logs are level-aware: `debug` is suppressed in production builds. Context is always a `Record<string, unknown>`.
+
+**Service Layer** -- External API calls are isolated in `lib/services/`:
+```typescript
+import { OpenAIClient } from '@/lib/services';
+const client = new OpenAIClient();
+const response = await client.getChatCompletion(messages);
+```
+
+**Custom Errors** -- Use structured error classes from `lib/errors.ts`:
+```typescript
+import { ApiError, ValidationError } from '@/lib/errors';
+throw new ApiError('Rate limit exceeded', 429);
+```
+
+**Timing Constants** -- All delays use named constants:
+```typescript
+import { TIMING } from '@/lib/utils/constants';
+setTimeout(callback, TIMING.ELEVENLABS_RESET_MS);
+```
+
+### Adding a New API Proxy
+
+1. Create `app/api/<name>/route.ts`
+2. Read server-only key from `process.env.KEY_NAME` (no `NEXT_PUBLIC_` prefix)
+3. Validate input with Zod
+4. Forward request to external API
+5. Return structured response
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push to GitHub
+2. Import in Vercel dashboard
+3. Add environment variables in Vercel project settings
+4. Deploy
+
+### Docker
+
+```dockerfile
+FROM oven/bun:1 AS base
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun run build
+EXPOSE 3000
+CMD ["bun", "start"]
+```
+
+### Self-Hosted
+
+```bash
+bun install
+bun run build
+bun start
+```
+
+Ensure all environment variables are set. HTTPS is required for WebRTC and `getUserMedia` in production.
+
+## Security
+
+- **Server-side API proxying**: OpenAI and Deepgram API keys are only accessible in server-side API routes (`/api/chat`, `/api/transcribe`). They are never included in client-side bundles.
+- **Client-side keys**: D-ID and ElevenLabs keys remain client-side due to architectural constraints of D-ID's WebSocket protocol. These keys should be scoped to minimal permissions.
+- **Input validation**: API routes use Zod schemas for request validation.
+- **URL encoding**: Animation IDs and pagination tokens are URL-encoded to prevent injection.
 
 ## Troubleshooting
 
-### Common Issues & Solutions
+### Common Issues
 
 1. **"Internal server error" from D-ID**
-   - Check the detailed error display in the UI for connection/request IDs
-   - Verify presenter configuration in console logs
-   - Ensure selected presenter is valid and streamable
-   - Check D-ID API key permissions and quotas
+   - Check the error display for connection/request IDs
+   - Verify D-ID API key permissions and quotas
+   - Ensure the selected presenter is valid and streamable
 
 2. **Presenter videos not loading**
-   - Videos automatically fallback to local files if remote URLs fail
-   - Check console for "Trying fallback local video..." messages
-   - Ensure local idle videos exist in `/public` directory
+   - Videos automatically fall back to local files if remote URLs fail
+   - Ensure local idle videos exist in `/public`
 
-3. **WebRTC Connection Failed**
-   - Check firewall settings
-   - Ensure HTTPS in production
+3. **WebRTC connection failed**
+   - Check firewall and NAT settings
+   - Ensure HTTPS in production (required for WebRTC)
    - Verify D-ID API key and permissions
-   - Check browser console for detailed WebSocket messages
 
-4. **Voice Recording Not Working**
-   - Check microphone permissions
-   - Ensure HTTPS for getUserMedia
-   - Verify Deepgram API key
-   - Check browser compatibility
+4. **Voice recording not working**
+   - Check microphone permissions in browser
+   - Ensure HTTPS (required for `getUserMedia`)
+   - Verify Deepgram API key is set in server environment
 
-5. **Presenter Selection Issues**
-   - Ensure D-ID API key has access to clips/presenters endpoint
-   - Check network connectivity for API calls
-   - Verify API rate limits haven't been exceeded
+5. **"Missing required environment variables"**
+   - Copy `.env.example` to `.env.local`
+   - Fill in all required keys
+   - Restart the development server after changes
 
 ### Browser Compatibility
 
-- Chrome/Chromium: Full support
-- Firefox: Full support
-- Safari: Requires additional WebRTC polyfills
-- Mobile browsers: Limited WebRTC support
+| Browser | Support |
+|---|---|
+| Chrome/Chromium | Full |
+| Firefox | Full |
+| Safari | Requires WebRTC polyfills |
+| Mobile Chrome | Limited WebRTC support |
 
-## 🚀 Key Innovations
+## Contributing
 
-### Dynamic Presenter System
-Unlike traditional static configurations, this demo features:
-- **Real-time API Integration**: Fetches presenters directly from D-ID's live API
-- **Interactive Selection**: Visual grid with hover previews and smooth transitions
-- **Context Management**: Global state ensures consistency across components
-- **Automatic Switching**: Seamless presenter changes with connection management
-
-### Advanced Error Handling
-- **Granular Error Parsing**: Extracts specific error details from D-ID responses
-- **User-Friendly Display**: Categorized error messages with actionable information
-- **Development Tools**: Comprehensive logging and debugging information
-- **Graceful Fallbacks**: Multiple layers of fallback systems
-
-### Performance & UX
-- **Smart Caching**: 30-minute API response caching to reduce calls
-- **Video Fallbacks**: Automatic switching to local videos when remote fails
-- **Optimized Rendering**: Context-based architecture prevents unnecessary re-renders
-- **Mobile-Responsive**: Works seamlessly across devices and screen sizes
+1. Create a feature branch from `main`
+2. Make changes with clear, atomic commits
+3. Ensure `bun run build` and `bun run lint` pass
+4. Open a pull request with a description of changes
 
 ## License
 
-This project is for demonstration purposes. Please ensure you comply with the terms of service for all third-party APIs used (D-ID, OpenAI, Deepgram, ElevenLabs).
+MIT
