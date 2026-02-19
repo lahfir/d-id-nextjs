@@ -25,6 +25,7 @@ export const OPENAI_CONFIG = {
 export const DEEPGRAM_CONFIG = {
   model: 'nova-2',
   smart_format: true,
+  language: 'es',
 } as const;
 
 export const ELEVENLABS_CONFIG = {

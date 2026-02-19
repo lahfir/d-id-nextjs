@@ -33,10 +33,11 @@ export function StreamingChat() {
    */
   useEffect(() => {
     try {
-      const config = getApiConfig();
+      // Validate client-side config (D-ID + ElevenLabs)
+      getApiConfig();
       setClients({
-        deepgram: new DeepgramClient(config.deepgramApiKey),
-        openai: new OpenAIClient(config.openaiApiKey),
+        deepgram: new DeepgramClient(),
+        openai: new OpenAIClient(),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to initialize';

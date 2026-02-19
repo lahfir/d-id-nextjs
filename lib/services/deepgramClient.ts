@@ -1,21 +1,16 @@
 import { DeepgramResponse } from '@/types/conversation';
-import { DEEPGRAM_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
+import { ERROR_MESSAGES } from '@/lib/utils/constants';
 import { createLogger } from '@/lib/utils/logger';
 
 const log = createLogger('DeepgramClient');
 
 /**
- * Client for Deepgram speech-to-text transcription
+ * Client for Deepgram speech-to-text transcription via server-side proxy
  */
 export class DeepgramClient {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
-  private readonly deepgramKey: string;
-
-  constructor(deepgramKey: string) {
-    this.deepgramKey = deepgramKey;
-  }
 
   /**
    * Starts audio recording from user microphone
@@ -66,24 +61,18 @@ export class DeepgramClient {
   }
 
   /**
-   * Transcribes audio blob using Deepgram API
+   * Transcribes audio blob through /api/transcribe proxy
    */
   private async transcribeAudio(audioBlob: Blob): Promise<string> {
     try {
-      const response = await fetch(
-        `https://api.deepgram.com/v1/listen?model=${DEEPGRAM_CONFIG.model}&smart_format=${DEEPGRAM_CONFIG.smart_format}&language=es`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Token ${this.deepgramKey}`,
-            'Content-Type': 'audio/wav',
-          },
-          body: audioBlob,
-        }
-      );
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'audio/wav' },
+        body: audioBlob,
+      });
 
       if (!response.ok) {
-        throw new Error(`Deepgram API error: ${response.status}`);
+        throw new Error(`Transcription error: ${response.status}`);
       }
 
       const data: DeepgramResponse = await response.json();
