@@ -242,78 +242,86 @@ export function StreamingChat() {
           {/* ── Spacer (pushes chat to bottom) ── */}
           <div className="flex-1" />
 
-          {/* ── Bottom Chat Panel ── */}
-          <div className="px-4 pb-4 md:px-6 md:pb-6">
-            {/* Collapsed toggle */}
-            {!isInterfaceOpen && (
-              <div className="flex justify-end mb-2 animate-fade-in">
-                <button
-                  onClick={toggleInterface}
-                  className="w-12 h-12 rounded-full flex items-center justify-center copper-glow-sm"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--copper-dark), var(--copper))',
-                  }}
-                >
-                  <svg className="w-5 h-5" style={{ color: 'var(--bg-primary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </button>
-              </div>
-            )}
-
-            {/* Chat container */}
-            <div
-              className={`max-w-lg ml-auto transition-all duration-500 ${
-                isInterfaceOpen
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-6 pointer-events-none'
-              }`}
-              style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+          {/* ── Right-side Floating Chat Panel ── */}
+          {/* Collapsed toggle — bottom-right corner */}
+          {!isInterfaceOpen && (
+            <button
+              onClick={toggleInterface}
+              className="fixed bottom-5 right-5 z-30 w-11 h-11 rounded-full flex items-center justify-center copper-glow-sm animate-fade-in"
+              style={{
+                background: 'linear-gradient(135deg, var(--copper-dark), var(--copper))',
+              }}
             >
-              <div className="panel-float copper-border-top overflow-hidden">
-                {/* Chat header */}
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Conversation</span>
-                    <div className={`led-indicator ${connectionStatus.isConnected ? 'led-green' : 'led-off'}`} style={{ width: '6px', height: '6px' }} />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {conversation.messages.length > 0 && (
-                      <button
-                        onClick={conversation.clearConversation}
-                        className="p-1.5 rounded-md transition-colors hover:bg-white/5"
-                        style={{ color: 'var(--text-muted)' }}
-                        title="Clear conversation"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
+              <svg className="w-5 h-5" style={{ color: 'var(--bg-primary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Chat container — pinned right, stretches top-to-bottom */}
+          <div
+            className={`fixed right-4 top-16 bottom-4 z-20 w-[340px] md:w-[360px] transition-all duration-500 ${
+              isInterfaceOpen
+                ? 'opacity-100 translate-x-0'
+                : 'opacity-0 translate-x-8 pointer-events-none'
+            }`}
+            style={{ transitionTimingFunction: 'var(--ease-out-expo)' }}
+          >
+            <div className="h-full flex flex-col rounded-2xl overflow-hidden" style={{
+              background: 'rgba(12, 10, 9, 0.55)',
+              backdropFilter: 'blur(20px) saturate(1.4)',
+              WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+              border: '1px solid var(--border-subtle)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset',
+            }}>
+              {/* Copper accent line */}
+              <div className="h-px flex-shrink-0" style={{
+                background: 'linear-gradient(90deg, transparent, var(--copper), var(--copper-light), var(--copper), transparent)',
+                opacity: 0.5,
+              }} />
+
+              {/* Chat header */}
+              <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Conversation</span>
+                  <div className={`led-indicator ${connectionStatus.isConnected ? 'led-green' : 'led-off'}`} style={{ width: '5px', height: '5px' }} />
+                </div>
+                <div className="flex items-center gap-0.5">
+                  {conversation.messages.length > 0 && (
                     <button
-                      onClick={toggleInterface}
+                      onClick={conversation.clearConversation}
                       className="p-1.5 rounded-md transition-colors hover:bg-white/5"
                       style={{ color: 'var(--text-muted)' }}
+                      title="Clear conversation"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-                  </div>
+                  )}
+                  <button
+                    onClick={toggleInterface}
+                    className="p-1.5 rounded-md transition-colors hover:bg-white/5"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
+              </div>
 
-                {/* Chat content */}
-                <div className="p-4">
-                  <ChatInterface
-                    messages={conversation.messages}
-                    onSendMessage={handleSendMessage}
-                    isLoading={conversation.isLoading}
-                    disabled={!streaming.isReady()}
-                    placeholder={streaming.isReady() ? "Type your message..." : "Connect to start chatting"}
-                    voiceRecording={voiceRecording}
-                    onVoiceTranscription={handleVoiceTranscription}
-                  />
-                </div>
+              {/* Chat content — fills remaining space */}
+              <div className="flex-1 min-h-0 px-3.5 pb-3.5 pt-0">
+                <ChatInterface
+                  messages={conversation.messages}
+                  onSendMessage={handleSendMessage}
+                  isLoading={conversation.isLoading}
+                  disabled={!streaming.isReady()}
+                  placeholder={streaming.isReady() ? "Type a message..." : "Connect to start"}
+                  voiceRecording={voiceRecording}
+                  onVoiceTranscription={handleVoiceTranscription}
+                />
               </div>
             </div>
           </div>
