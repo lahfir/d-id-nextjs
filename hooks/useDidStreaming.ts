@@ -4,6 +4,7 @@ import { ConnectionState } from '@/types/did';
 import { ApiConfig } from '@/types/api';
 import { usePresenter } from '@/contexts/PresenterContext';
 import { createLogger } from '@/lib/utils/logger';
+import { TIMING } from '@/lib/utils/constants';
 
 const log = createLogger('useDidStreaming');
 
@@ -114,9 +115,8 @@ export function useDidStreaming(config: ApiConfig | null) {
             // WORKAROUND: Add delay after stream completion to let ElevenLabs reset
             setTimeout(() => {
               log.debug('ElevenLabs reset delay completed - ready for next message');
-              // Force reset streaming state in case it gets stuck
               setState(prev => ({ ...prev, isStreaming: false }));
-            }, 2000);
+            }, TIMING.ELEVENLABS_RESET_MS);
           }
 
           setState(prev => ({

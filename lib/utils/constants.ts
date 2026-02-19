@@ -14,7 +14,7 @@ export const PRESENTER_CONFIG: PresenterConfig = {
 export const STREAM_CONFIG = {
   warmup: true,
   stitch: true,
-  ssml: 'false',
+  ssml: false,
 } as const;
 
 export const OPENAI_CONFIG = {
@@ -23,14 +23,25 @@ export const OPENAI_CONFIG = {
 } as const;
 
 export const DEEPGRAM_CONFIG = {
-  model: 'nova-2',
+  model: 'nova-3',
   smart_format: true,
-  language: 'es',
+  language: 'multi',
 } as const;
 
 export const ELEVENLABS_CONFIG = {
-  model_id: 'eleven_turbo_v2_5',
+  model_id: 'eleven_flash_v2_5',
   voice_id: process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || '2EiwWnXFnvU5JabPnv8n',
+} as const;
+
+export const TIMING = {
+  /** Delay after stream/done for ElevenLabs reset */
+  ELEVENLABS_RESET_MS: 2000,
+  /** Fallback timeout to force stream/ready */
+  STREAM_READY_FALLBACK_MS: 5000,
+  /** Delay after stream/ready event before accepting messages */
+  STREAM_READY_SETTLE_MS: 1000,
+  /** WebRTC stats polling interval */
+  STATS_POLL_INTERVAL_MS: 2000,
 } as const;
 
 export const SYSTEM_PROMPT = 'You are a helpful Spanish assistant that can answer questions and help with tasks.';

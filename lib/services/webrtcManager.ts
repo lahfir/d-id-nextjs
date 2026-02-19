@@ -1,4 +1,4 @@
-import { STREAM_CONFIG } from '@/lib/utils/constants';
+import { STREAM_CONFIG, TIMING } from '@/lib/utils/constants';
 import { createLogger } from '@/lib/utils/logger';
 
 const log = createLogger('WebRTCManager');
@@ -101,7 +101,7 @@ export class WebRTCManager {
         log.info('Forcing stream/ready after fallback timeout');
         this._isStreamReady = true;
       }
-    }, 5000);
+    }, TIMING.STREAM_READY_FALLBACK_MS);
   }
 
   /**
@@ -124,7 +124,7 @@ export class WebRTCManager {
           this.lastBytesReceived = report.bytesReceived;
         }
       });
-    }, 500);
+    }, TIMING.STATS_POLL_INTERVAL_MS);
   }
 
   /**
@@ -145,7 +145,7 @@ export class WebRTCManager {
         status = 'ready';
         setTimeout(() => {
           this._isStreamReady = true;
-        }, 1000);
+        }, TIMING.STREAM_READY_SETTLE_MS);
         break;
       case 'stream/error':
         status = 'error';
