@@ -140,7 +140,7 @@ export function ChatInterface({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder={placeholder}
             disabled={disabled || isLoading}
             className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/40 focus:ring-1 focus:ring-white/20 focus:border-white/20 disabled:bg-white/5 disabled:cursor-not-allowed transition-all duration-200 outline-none"

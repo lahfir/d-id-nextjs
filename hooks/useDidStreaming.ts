@@ -3,6 +3,9 @@ import { DidClient } from '@/lib/services/didClient';
 import { ConnectionState } from '@/types/did';
 import { ApiConfig } from '@/types/api';
 import { usePresenter } from '@/contexts/PresenterContext';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('useDidStreaming');
 
 export interface StreamingState {
   connectionState: ConnectionState;
@@ -98,19 +101,19 @@ export function useDidStreaming(config: ApiConfig | null) {
           }));
         },
         onStreamEvent: (status) => {
-          console.log('Stream event received:', status);
+          log.debug('Stream event received', { status });
 
           // Log timing for debugging
           if (status === 'started') {
-            console.log('Stream started at:', new Date().toISOString());
+            log.info('Stream started', { timestamp: new Date().toISOString() });
           } else if (status === 'done') {
-            console.log('Stream completed at:', new Date().toISOString());
+            log.info('Stream completed', { timestamp: new Date().toISOString() });
             const streamDuration = Date.now() - lastStreamTimeRef.current;
-            console.log('Stream duration:', streamDuration + 'ms');
+            log.debug('Stream duration', { durationMs: streamDuration });
 
             // WORKAROUND: Add delay after stream completion to let ElevenLabs reset
             setTimeout(() => {
-              console.log('ElevenLabs reset delay completed - ready for next message');
+              log.debug('ElevenLabs reset delay completed - ready for next message');
               // Force reset streaming state in case it gets stuck
               setState(prev => ({ ...prev, isStreaming: false }));
             }, 2000);
@@ -125,7 +128,7 @@ export function useDidStreaming(config: ApiConfig | null) {
         },
       });
     } catch (error) {
-      console.error('Failed to connect to D-ID:', error);
+      log.error('Failed to connect to D-ID', { error: String(error) });
     }
   }, []);
 
@@ -172,13 +175,13 @@ export function useDidStreaming(config: ApiConfig | null) {
       lastStreamTimeRef.current = Date.now();
 
       // WORKAROUND: Use index 0 for all messages to treat each as "first" for ElevenLabs
-      console.log('Sending message with index 0 (workaround for ElevenLabs)');
+      log.debug('Sending message with index 0 (workaround for ElevenLabs)');
       didClientRef.current.sendTextMessage(text, 0);
 
       // Still increment our internal counter for logging
       messageIndexRef.current++;
     } catch (error) {
-      console.error('Failed to send text message:', error);
+      log.error('Failed to send text message', { error: String(error) });
       throw error;
     }
   }, [state.connectionState.isConnected, state.isStreaming]);
@@ -188,7 +191,7 @@ export function useDidStreaming(config: ApiConfig | null) {
    */
   const isReady = useCallback(() => {
     const ready = state.connectionState.isConnected && !state.connectionState.isConnecting && !state.isStreaming;
-    console.log('isReady check:', {
+    log.debug('isReady check', {
       isConnected: state.connectionState.isConnected,
       isConnecting: state.connectionState.isConnecting,
       isStreaming: state.isStreaming,

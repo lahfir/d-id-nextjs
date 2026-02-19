@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@/lib/utils/logger';
 import { useCallback, useEffect, useState, useMemo } from 'react';
+
+const log = createLogger('StreamingChat');
 import { VideoDisplay } from './VideoDisplay';
 import { ChatInterface } from './ChatInterface';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -38,7 +41,7 @@ export function StreamingChat() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to initialize';
       setInitError(message);
-      console.error('Initialization error:', error);
+      log.error('Initialization error', { error: String(error) });
     }
   }, []);
 
@@ -49,7 +52,7 @@ export function StreamingChat() {
     try {
       return getApiConfig();
     } catch (error) {
-      console.error('Error getting API config:', error);
+      log.error('Error getting API config', { error: String(error) });
       return null;
     }
   }, [clients.deepgram, clients.openai]);
@@ -74,7 +77,7 @@ export function StreamingChat() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(errorMessage);
-      console.error('Failed to send message:', error);
+      log.error('Failed to send message', { error: String(error) });
     }
   }, [streaming, conversation]);
 
@@ -82,7 +85,7 @@ export function StreamingChat() {
    * Handles voice transcription
    */
   const handleVoiceTranscription = useCallback((transcription: string) => {
-    console.log('Voice transcription:', transcription);
+    log.debug('Voice transcription', { transcription });
     handleSendMessage(transcription);
   }, [handleSendMessage]);
 

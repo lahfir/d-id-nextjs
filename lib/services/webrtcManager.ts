@@ -1,4 +1,7 @@
 import { STREAM_CONFIG } from '@/lib/utils/constants';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('WebRTCManager');
 
 export interface WebRTCCallbacks {
   onIceGatheringStateChange: (state: RTCIceGatheringState) => void;
@@ -18,11 +21,14 @@ export class WebRTCManager {
   private dataChannel: RTCDataChannel | null = null;
   private statsIntervalId: NodeJS.Timeout | null = null;
   private lastBytesReceived = 0;
-  public isStreamReady = !STREAM_CONFIG.warmup;
-  public videoIsPlaying = false;
+  private _isStreamReady = !STREAM_CONFIG.warmup;
+  private _videoIsPlaying = false;
+
+  get isStreamReady(): boolean { return this._isStreamReady; }
+  get videoIsPlaying(): boolean { return this._videoIsPlaying; }
 
   /**
-   * Creates peer connection with provided offer and ice servers
+   * Creates peer connection with provided offer and ICE servers
    */
   async createPeerConnection(
     offer: RTCSessionDescriptionInit,
@@ -85,19 +91,21 @@ export class WebRTCManager {
   }
 
   /**
-   * Handles connection established event
+   * Handles connection established event.
+   * Forces stream/ready after a timeout as a fallback for configurations
+   * that don't emit the event within a reasonable window.
    */
   private handleConnectionEstablished(): void {
     setTimeout(() => {
-      if (!this.isStreamReady) {
-        console.log('forcing stream/ready');
-        this.isStreamReady = true;
+      if (!this._isStreamReady) {
+        log.info('Forcing stream/ready after fallback timeout');
+        this._isStreamReady = true;
       }
     }, 5000);
   }
 
   /**
-   * Sets up video stats monitoring
+   * Sets up video stats monitoring to detect active video playback
    */
   private setupStatsMonitoring(event: RTCTrackEvent): void {
     if (!event.track) return;
@@ -108,10 +116,10 @@ export class WebRTCManager {
       const stats = await this.peerConnection.getStats(event.track);
       stats.forEach((report) => {
         if (report.type === 'inbound-rtp' && report.kind === 'video') {
-          const videoStatusChanged = this.videoIsPlaying !== (report.bytesReceived > this.lastBytesReceived);
+          const videoStatusChanged = this._videoIsPlaying !== (report.bytesReceived > this.lastBytesReceived);
 
           if (videoStatusChanged) {
-            this.videoIsPlaying = report.bytesReceived > this.lastBytesReceived;
+            this._videoIsPlaying = report.bytesReceived > this.lastBytesReceived;
           }
           this.lastBytesReceived = report.bytesReceived;
         }
@@ -136,7 +144,7 @@ export class WebRTCManager {
       case 'stream/ready':
         status = 'ready';
         setTimeout(() => {
-          this.isStreamReady = true;
+          this._isStreamReady = true;
         }, 1000);
         break;
       case 'stream/error':
@@ -147,29 +155,47 @@ export class WebRTCManager {
         break;
     }
 
-    return { status, isReady: this.isStreamReady };
+    return { status, isReady: this._isStreamReady };
   }
 
   /**
-   * Closes peer connection and cleans up resources
+   * Closes peer connection and cleans up all resources
    */
   close(): void {
-    if (this.peerConnection) {
-      this.peerConnection.close();
-      this.peerConnection = null;
-    }
-
-    if (this.dataChannel) {
-      this.dataChannel = null;
-    }
-
     if (this.statsIntervalId) {
       clearInterval(this.statsIntervalId);
       this.statsIntervalId = null;
     }
 
-    this.isStreamReady = !STREAM_CONFIG.warmup;
-    this.videoIsPlaying = false;
+    if (this.dataChannel) {
+      this.dataChannel.onmessage = null;
+      this.dataChannel.onerror = null;
+      this.dataChannel.onclose = null;
+      this.dataChannel.close();
+      this.dataChannel = null;
+    }
+
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(sender => {
+        if (sender.track) sender.track.stop();
+      });
+      this.peerConnection.getReceivers().forEach(receiver => {
+        if (receiver.track) receiver.track.stop();
+      });
+
+      this.peerConnection.onicecandidate = null;
+      this.peerConnection.oniceconnectionstatechange = null;
+      this.peerConnection.onconnectionstatechange = null;
+      this.peerConnection.onsignalingstatechange = null;
+      this.peerConnection.onicegatheringstatechange = null;
+      this.peerConnection.ontrack = null;
+
+      this.peerConnection.close();
+      this.peerConnection = null;
+    }
+
+    this._isStreamReady = !STREAM_CONFIG.warmup;
+    this._videoIsPlaying = false;
     this.lastBytesReceived = 0;
   }
 

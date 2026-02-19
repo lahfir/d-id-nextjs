@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { PresentersApiResponse } from '@/types/did';
 import { getApiConfig } from '@/lib/utils/env';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('api/presenters');
 
 // Cache for presenters data (5 minutes)
 let presentersCache: {
@@ -54,7 +57,7 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching presenters:', error);
+    log.error('Error fetching presenters', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch presenters' },
       { status: 500 }

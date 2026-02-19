@@ -1,5 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { DeepgramClient } from '@/lib/services/deepgramClient';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('useVoiceRecording');
 
 export interface VoiceRecordingState {
   isRecording: boolean;
@@ -44,7 +47,7 @@ export function useVoiceRecording(deepgramClient: DeepgramClient | null) {
         ...prev,
         error: errorMessage,
       }));
-      console.error('Failed to start recording:', error);
+      log.error('Failed to start recording', { error: String(error) });
     }
   }, [deepgramClient]);
 
@@ -75,7 +78,7 @@ export function useVoiceRecording(deepgramClient: DeepgramClient | null) {
         isProcessing: false,
         error: errorMessage,
       }));
-      console.error('Failed to process recording:', error);
+      log.error('Failed to process recording', { error: String(error) });
       return null;
     }
   }, [deepgramClient, state.isRecording]);

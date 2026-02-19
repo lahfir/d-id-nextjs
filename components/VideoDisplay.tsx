@@ -1,7 +1,10 @@
 'use client';
 
+import { createLogger } from '@/lib/utils/logger';
 import { useEffect, useRef, useState } from 'react';
 import { usePresenter } from '@/contexts/PresenterContext';
+
+const log = createLogger('VideoDisplay');
 
 interface VideoDisplayProps {
   streamVideo: MediaStream | null;
@@ -42,7 +45,7 @@ export function VideoDisplay({
         streamVideoRef.current.play().catch((error) => {
           // Ignore AbortError which happens when quickly switching between streams
           if (error.name !== 'AbortError') {
-            console.error('Video play error:', error);
+            log.error('Video play error', { error: String(error) });
           }
         });
       }
@@ -87,7 +90,7 @@ export function VideoDisplay({
       };
 
       const onError = () => {
-        console.warn('Custom animation video failed to load:', customAnimationUrl);
+        log.warn('Custom animation video failed to load', { url: customAnimationUrl });
         setAnimationLoading(false);
       };
 
@@ -97,7 +100,7 @@ export function VideoDisplay({
 
       video.play().catch((error) => {
         if (error.name !== 'AbortError') {
-          console.warn('Custom animation video play failed:', error.message);
+          log.warn('Custom animation video play failed', { error: error.message });
         }
       });
 
@@ -142,11 +145,11 @@ export function VideoDisplay({
       };
 
       const onError = () => {
-        console.warn('Idle video failed to load:', videoSource);
+        log.warn('Idle video failed to load', { videoSource });
 
         // If original video failed and we're not already using fallback, try fallback
         if (!fallbackVideoSrc && idleVideoSrc && idleVideoSrc.startsWith('http')) {
-          console.log('Trying fallback local video...');
+          log.info('Trying fallback local video...');
           setFallbackVideoSrc('/alex_v2_idle.mp4'); // Default fallback
         }
       };
@@ -158,7 +161,7 @@ export function VideoDisplay({
 
       video.play().catch((error) => {
         if (error.name !== 'AbortError') {
-          console.warn('Idle video play failed:', error.message);
+          log.warn('Idle video play failed', { error: error.message });
         }
       });
 

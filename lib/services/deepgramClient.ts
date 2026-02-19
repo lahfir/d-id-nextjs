@@ -1,5 +1,8 @@
 import { DeepgramResponse } from '@/types/conversation';
 import { DEEPGRAM_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('DeepgramClient');
 
 /**
  * Client for Deepgram speech-to-text transcription
@@ -31,7 +34,7 @@ export class DeepgramClient {
 
       this.mediaRecorder.start();
     } catch (error) {
-      console.error('Error starting recording:', error);
+      log.error('Error starting recording', { error: String(error) });
       throw error;
     }
   }
@@ -86,7 +89,7 @@ export class DeepgramClient {
       const data: DeepgramResponse = await response.json();
       return data.results.channels[0].alternatives[0].transcript;
     } catch (error) {
-      console.error('Transcription error:', error);
+      log.error('Transcription error', { error: String(error) });
       throw error;
     }
   }

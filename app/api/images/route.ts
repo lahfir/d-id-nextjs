@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getApiConfig } from '@/lib/utils/env';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('api/images');
 
 const D_ID_API_BASE = 'https://api.d-id.com';
 
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('D-ID API error:', errorData);
+      log.error('D-ID API error', { errorData });
       return NextResponse.json(
         { error: errorData.message || 'Failed to upload image to D-ID' },
         { status: response.status }
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error) {
-    console.error('Error uploading image to D-ID:', error);
+    log.error('Error uploading image to D-ID', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to upload image to D-ID' },
       { status: 500 }

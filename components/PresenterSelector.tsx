@@ -1,10 +1,13 @@
 'use client';
 
+import { createLogger } from '@/lib/utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 import { ClipsPresenter } from '@/types/did';
 import { usePresenter } from '@/contexts/PresenterContext';
 import { AnimationService } from '@/lib/services/animationService';
 import Image from 'next/image';
+
+const log = createLogger('PresenterSelector');
 
 interface AnimationCache {
   id: string;
@@ -71,7 +74,7 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
       setPresenters(uniquePresenters);
     } catch (err) {
       setError('Failed to load presenters. Please try again.');
-      console.error('Error fetching presenters:', err);
+      log.error('Error fetching presenters', { error: String(err) });
     } finally {
       setLoading(false);
     }
@@ -189,7 +192,7 @@ export function PresenterSelector({ onClose }: PresenterSelectorProps) {
       }
 
     } catch (err) {
-      console.error('Animation creation error:', err);
+      log.error('Animation creation error', { error: String(err) });
       setError(err instanceof Error ? err.message : 'Failed to create animation');
     } finally {
       setAnimating(false);

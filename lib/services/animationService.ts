@@ -1,5 +1,7 @@
 import { CreateAnimationRequest, AnimationResponse } from '@/types/did';
-import crypto from 'crypto';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('AnimationService');
 
 interface AnimationCache {
   id: string;
@@ -30,12 +32,8 @@ export class AnimationService {
       const limited = cache.slice(0, MAX_CACHE_SIZE);
       localStorage.setItem(ANIMATION_CACHE_KEY, JSON.stringify(limited));
     } catch (error) {
-      console.warn('Failed to save animation cache:', error);
+      log.warn('Failed to save animation cache', { error: String(error) });
     }
-  }
-
-  static generateCacheKey(sourceUrl: string): string {
-    return crypto.createHash('md5').update(sourceUrl).digest('hex');
   }
 
   static findCachedAnimation(sourceUrl: string): AnimationCache | null {

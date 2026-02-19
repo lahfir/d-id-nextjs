@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@/lib/utils/logger';
 import { Component, ReactNode, ErrorInfo } from 'react';
+
+const log = createLogger('ErrorBoundary');
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -26,7 +29,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error boundary caught an error:', error, errorInfo);
+    log.error('Error boundary caught an error', { error: String(error), componentStack: errorInfo.componentStack ?? '' });
   }
 
   render() {

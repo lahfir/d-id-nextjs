@@ -2,6 +2,20 @@ import { InitStreamMessage, StreamTextMessage, WebSocketResponse, ConnectionStat
 import { ApiConfig } from '@/types/api';
 import { WebRTCManager, WebRTCCallbacks } from './webrtcManager';
 import { PRESENTER_CONFIG, ELEVENLABS_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('DidClient');
+
+/** Shape of D-ID error responses */
+interface DidErrorPayload {
+  message?: string;
+  error?: string | Record<string, unknown>;
+  connectionId?: string;
+  requestId?: string;
+  payload?: {
+    error?: string | Record<string, unknown>;
+  };
+}
 
 /**
  * Client for D-ID streaming API with WebSocket and WebRTC
@@ -43,7 +57,7 @@ export class DidClient {
       this.setupWebSocketHandlers(callbacks);
 
       const initMessage = this.createInitStreamMessage();
-      console.log('Sending init stream message:', initMessage);
+      log.debug('Sending init stream message', { type: initMessage.type });
       this.sendMessage(initMessage);
 
     } catch (error) {
@@ -61,24 +75,13 @@ export class DidClient {
    * Sends text message for streaming
    */
   sendTextMessage(text: string, messageIndex: number): void {
-    console.log('Attempting to send text message:', {
-      text,
-      messageIndex,
-      hasWebSocket: !!this.ws,
-      streamId: this.connectionState.streamId,
-      sessionId: this.connectionState.sessionId,
-      isConnected: this.connectionState.isConnected,
+    log.debug('Sending text message', {
+      messageIndex: String(messageIndex),
       service: this.serviceType,
-      presenterConfig: this.presenterConfig,
-      voiceId: ELEVENLABS_CONFIG.voice_id
     });
 
     if (!this.ws || !this.connectionState.streamId || !this.connectionState.sessionId) {
-      console.error('Connection check failed:', {
-        hasWebSocket: !!this.ws,
-        streamId: this.connectionState.streamId,
-        sessionId: this.connectionState.sessionId
-      });
+      log.error('Connection check failed — not connected');
       throw new Error('Not connected to streaming service');
     }
 
@@ -91,7 +94,7 @@ export class DidClient {
           voice_id: ELEVENLABS_CONFIG.voice_id,
           model_id: ELEVENLABS_CONFIG.model_id,
         },
-        ssml: this.serviceType === 'clips', // Enable SSML for clips (needed for breaks)
+        ssml: this.serviceType === 'clips',
       },
       config: {
         stitch: true,
@@ -111,15 +114,13 @@ export class DidClient {
           }
           : {
             ...payloadBase,
-            // Only ElevenLabs requires an external API key
             apiKeyExternal: {
               elevenlabs: { key: this.config.elevenlabsApiKey },
             },
           },
     } as StreamTextMessage;
 
-    console.log('Sending stream-text message');
-    console.log('Full stream message payload:', JSON.stringify(message, null, 2));
+    log.debug('Sending stream-text message');
     this.sendMessage(message);
   }
 
@@ -161,17 +162,17 @@ export class DidClient {
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        console.log('WebSocket connection opened');
+        log.info('WebSocket connection opened');
         resolve(ws);
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        log.error('WebSocket connection error', { error: String(error) });
         reject(new Error('WebSocket connection failed'));
       };
 
       ws.onclose = () => {
-        console.log('WebSocket connection closed');
+        log.info('WebSocket connection closed');
       };
     });
   }
@@ -191,7 +192,7 @@ export class DidClient {
         const data: WebSocketResponse = JSON.parse(event.data);
         await this.handleWebSocketMessage(data, callbacks);
       } catch (error) {
-        console.error('Error handling WebSocket message:', error);
+        log.error('Error handling WebSocket message', { error: String(error) });
       }
     };
   }
@@ -212,14 +213,13 @@ export class DidClient {
         await this.handleInitStream(data, callbacks);
         break;
       case 'sdp':
-        console.log('SDP message received:', data);
+        log.debug('SDP message received');
         break;
       case 'ice':
-        console.log('ICE message received:', data.payload);
+        log.debug('ICE message received');
         try {
           const pc = this.webrtcManager.getPeerConnection();
           if (pc && data.payload) {
-            // Support both nested and flat candidate formats
             interface CandPayload { candidate: string; sdpMid?: string; sdpMLineIndex?: number; }
             const candPayload = (data.payload.candidate ?? data.payload) as CandPayload;
             if (candPayload && candPayload.candidate) {
@@ -232,38 +232,38 @@ export class DidClient {
             }
           }
         } catch (err) {
-          console.error('Failed to add remote ICE candidate', err);
+          log.error('Failed to add remote ICE candidate', { error: String(err) });
         }
         break;
       case 'stream-text':
-        console.log('Stream text response:', data);
+        log.debug('Stream text response', { status: data.status ?? 'unknown' });
         if (data.status) {
           callbacks.onStreamEvent(data.status);
         }
         break;
       case 'delete-stream':
-        console.log('Stream deleted:', data);
+        log.debug('Stream deleted');
         break;
-      case 'error':
-        console.error('D-ID API Error:', data);
-        const errorMessage = this.formatApiError(data);
+      case 'error': {
+        log.error('D-ID API error received');
+        const errorMessage = this.formatApiError(data as unknown as DidErrorPayload);
         this.updateConnectionState({ error: errorMessage, isConnecting: false });
         callbacks.onConnectionStateChange(this.connectionState);
         break;
-      default:
-        // Handle internal server errors and other unknown messages
-        console.log('Raw WebSocket message:', data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((data as any).error || (typeof data === 'object' && 'message' in data)) {
-          console.error('D-ID API Error (unknown type):', data);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const errorMessage = this.formatApiError(data as any);
+      }
+      default: {
+        log.debug('Unhandled WebSocket message', { messageType: String(data.messageType) });
+        const errorPayload = data as unknown as DidErrorPayload;
+        if (errorPayload.error || ('message' in data)) {
+          log.error('D-ID API error (unknown type)');
+          const errorMessage = this.formatApiError(errorPayload);
           this.updateConnectionState({ error: errorMessage, isConnecting: false });
           callbacks.onConnectionStateChange(this.connectionState);
         } else {
-          console.warn('Unknown WebSocket message type:', data);
+          log.warn('Unknown WebSocket message type', { messageType: String(data.messageType) });
         }
         break;
+      }
     }
   }
 
@@ -278,10 +278,10 @@ export class DidClient {
       onStreamEvent: (status: string) => void;
     }
   ): Promise<void> {
-    console.log('Init stream data:', data);
+    log.debug('Processing init-stream response');
 
     if (!data.id || !data.session_id || !data.offer || !data.ice_servers) {
-      console.error('Invalid init-stream response:', data);
+      log.error('Invalid init-stream response — missing required fields');
       throw new Error('Invalid init-stream response');
     }
 
@@ -290,14 +290,14 @@ export class DidClient {
       sessionId: data.session_id,
     });
 
-    console.log('Updated connection state:', this.connectionState);
+    log.debug('Connection state updated', { streamId: data.id, sessionId: data.session_id });
 
     const webrtcCallbacks: WebRTCCallbacks = {
-      onIceGatheringStateChange: (state) => console.log('ICE gathering state:', state),
+      onIceGatheringStateChange: (state) => log.debug('ICE gathering state', { state }),
       onIceCandidate: (event) => this.handleIceCandidate(event),
-      onIceConnectionStateChange: (state) => console.log('ICE connection state:', state),
+      onIceConnectionStateChange: (state) => log.debug('ICE connection state', { state }),
       onConnectionStateChange: (state) => {
-        console.log('Peer connection state:', state);
+        log.info('Peer connection state changed', { state });
         if (state === 'connected') {
           this.updateConnectionState({
             isConnecting: false,
@@ -306,16 +306,16 @@ export class DidClient {
           callbacks.onConnectionStateChange(this.connectionState);
         }
       },
-      onSignalingStateChange: (state) => console.log('Signaling state:', state),
+      onSignalingStateChange: (state) => log.debug('Signaling state', { state }),
       onTrack: (event) => {
         if (event.streams[0]) {
           callbacks.onVideoTrack(event.streams[0]);
         }
       },
       onStreamEvent: (event) => {
-        console.log('Raw data channel event:', event.data);
+        log.debug('Data channel event', { data: String(event.data) });
         const { status } = this.webrtcManager.processStreamEvent(event.data);
-        console.log('Processed stream status:', status);
+        log.debug('Processed stream status', { status });
         callbacks.onStreamEvent(status);
       },
     };
@@ -338,7 +338,7 @@ export class DidClient {
 
       this.sendMessage(sdpMessage);
     } catch (error) {
-      console.error('Error during WebRTC setup:', error);
+      log.error('WebRTC setup failed', { error: String(error) });
       this.updateConnectionState({
         isConnecting: false,
         error: 'WebRTC connection failed'
@@ -353,8 +353,6 @@ export class DidClient {
    */
   private handleIceCandidate(event: RTCPeerConnectionIceEvent): void {
     if (!event.candidate) {
-      // D-ID expects only real candidates. Do not send the synthetic
-      // end-of-gathering notification – doing so yields "Invalid ice payload".
       return;
     }
 
@@ -374,17 +372,15 @@ export class DidClient {
   }
 
   /**
-   * Formats API errors for better user display
+   * Formats API errors for user display
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private formatApiError(data: any): string {
-    // Handle different error message formats from D-ID API
+  private formatApiError(data: DidErrorPayload): string {
     if (data.message) {
-      const details = [];
+      const details: string[] = [];
       if (data.connectionId) details.push(`Connection: ${data.connectionId}`);
       if (data.requestId) details.push(`Request: ${data.requestId}`);
 
-      let errorMsg = data.message.toString();
+      let errorMsg = String(data.message);
       if (details.length > 0) {
         errorMsg += ` (${details.join(', ')})`;
       }
@@ -396,11 +392,10 @@ export class DidClient {
       return typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
     }
 
-    if (data.payload && data.payload.error) {
+    if (data.payload?.error) {
       return typeof data.payload.error === 'string' ? data.payload.error : JSON.stringify(data.payload.error);
     }
 
-    // Fallback for any other error format
     return `API Error: ${JSON.stringify(data)}`;
   }
 
@@ -410,17 +405,16 @@ export class DidClient {
   private createInitStreamMessage(): InitStreamMessage {
     const presenterConfig = this.presenterConfig[this.serviceType];
 
-    // Validate presenter configuration
     if (this.serviceType === 'clips') {
       const clipsConfig = presenterConfig as { presenter_id: string; driver_id: string };
       if (!clipsConfig.presenter_id || !clipsConfig.driver_id) {
-        console.error('Invalid clips configuration:', presenterConfig);
+        log.error('Invalid clips configuration');
         throw new Error('Clips mode requires presenter_id and driver_id');
       }
     } else if (this.serviceType === 'talks') {
       const talksConfig = presenterConfig as { source_url: string };
       if (!talksConfig.source_url) {
-        console.error('Invalid talks configuration:', presenterConfig);
+        log.error('Invalid talks configuration');
         throw new Error('Talks mode requires source_url');
       }
     }
@@ -433,7 +427,7 @@ export class DidClient {
       },
     };
 
-    console.log('Created init stream message for', this.serviceType, 'mode:', message);
+    log.debug('Created init stream message', { mode: this.serviceType });
     return message;
   }
 
@@ -442,15 +436,15 @@ export class DidClient {
    */
   private sendMessage(message: StreamMessage): void {
     if (!this.ws) {
-      console.error(ERROR_MESSAGES.WEBSOCKET_UNDEFINED);
+      log.error(ERROR_MESSAGES.WEBSOCKET_UNDEFINED);
       return;
     }
 
     if (this.ws.readyState === WebSocket.OPEN) {
-      console.log('Sending message:', message.type, JSON.stringify(message, null, 2));
+      log.debug('Sending WebSocket message', { type: message.type });
       this.ws.send(JSON.stringify(message));
     } else {
-      console.error(ERROR_MESSAGES.WEBSOCKET_NOT_OPEN, this.ws.readyState);
+      log.error(ERROR_MESSAGES.WEBSOCKET_NOT_OPEN, { readyState: String(this.ws.readyState) });
     }
   }
 
@@ -475,8 +469,7 @@ export class DidClient {
   }
 
   /**
-   * Allow switching between clips / talks at runtime.
-   * Call this right after the user selects a new presenter or image.
+   * Switches between clips/talks at runtime.
    */
   public updateMode(service: 'clips' | 'talks', updatedPresenterCfg: PresenterConfig): void {
     this.serviceType = service;

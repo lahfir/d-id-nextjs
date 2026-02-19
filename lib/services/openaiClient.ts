@@ -1,9 +1,12 @@
 import { ChatMessage, OpenAIRequest, OpenAIResponse } from '@/types/conversation';
 import { ApiError } from '@/types/api';
 import { OPENAI_CONFIG, ERROR_MESSAGES } from '@/lib/utils/constants';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('OpenAIClient');
 
 /**
- * Client for OpenAI GPT-4o chat completions
+ * Client for OpenAI chat completions
  */
 export class OpenAIClient {
   private readonly apiKey: string;
@@ -39,7 +42,7 @@ export class OpenAIClient {
       const data: OpenAIResponse = await response.json();
       return data.choices[0].message.content;
     } catch (error) {
-      console.error('OpenAI API error:', error);
+      log.error('OpenAI API error', { error: String(error) });
       throw error;
     }
   }

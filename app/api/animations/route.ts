@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CreateAnimationRequest, AnimationResponse, AnimationsListResponse } from '@/types/did';
 import { getApiConfig } from '@/lib/utils/env';
+import { createLogger } from '@/lib/utils/logger';
+
+const log = createLogger('api/animations');
 
 const D_ID_API_BASE = 'https://api.d-id.com';
 
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('D-ID API error:', errorData);
+      log.error('D-ID API error', { errorData });
       return NextResponse.json(
         { error: errorData.message || 'Failed to create animation' },
         { status: response.status }
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
 
   } catch (error) {
-    console.error('Error creating animation:', error);
+    log.error('Error creating animation', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to create animation' },
       { status: 500 }
@@ -105,7 +108,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Error fetching animations:', error);
+    log.error('Error fetching animations', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to fetch animations' },
       { status: 500 }
@@ -145,7 +148,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('Error deleting animation:', error);
+    log.error('Error deleting animation', { error: String(error) });
     return NextResponse.json(
       { error: 'Failed to delete animation' },
       { status: 500 }
