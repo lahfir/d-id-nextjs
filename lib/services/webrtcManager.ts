@@ -28,18 +28,22 @@ export class WebRTCManager {
   get videoIsPlaying(): boolean { return this._videoIsPlaying; }
 
   /**
-   * Creates peer connection with provided offer and ICE servers
+   * Creates peer connection with provided offer and ICE servers.
+   * Always closes any existing connection first to prevent stale state on reconnect.
    */
   async createPeerConnection(
     offer: RTCSessionDescriptionInit,
     iceServers: RTCIceServer[],
     callbacks: WebRTCCallbacks
   ): Promise<RTCSessionDescriptionInit> {
-    if (!this.peerConnection) {
-      this.peerConnection = new RTCPeerConnection({ iceServers });
-      this.dataChannel = this.peerConnection.createDataChannel('JanusDataChannel');
-      this.setupEventListeners(callbacks);
+    if (this.peerConnection) {
+      log.info('Closing existing peer connection before creating new one');
+      this.close();
     }
+
+    this.peerConnection = new RTCPeerConnection({ iceServers });
+    this.dataChannel = this.peerConnection.createDataChannel('JanusDataChannel');
+    this.setupEventListeners(callbacks);
 
     await this.peerConnection.setRemoteDescription(offer);
     const answer = await this.peerConnection.createAnswer();
@@ -64,7 +68,9 @@ export class WebRTCManager {
       const state = this.peerConnection!.iceConnectionState;
       callbacks.onIceConnectionStateChange(state);
 
-      if (state === 'failed' || state === 'closed') {
+      if (state === 'disconnected') {
+        this.attemptIceRestart();
+      } else if (state === 'failed' || state === 'closed') {
         this.close();
       }
     });
@@ -156,6 +162,23 @@ export class WebRTCManager {
     }
 
     return { status, isReady: this._isStreamReady };
+  }
+
+  /**
+   * Attempts ICE restart to recover from transient disconnects.
+   * Falls back to full close if restart fails.
+   */
+  private async attemptIceRestart(): Promise<void> {
+    if (!this.peerConnection) return;
+
+    try {
+      log.info('Attempting ICE restart');
+      const offer = await this.peerConnection.createOffer({ iceRestart: true });
+      await this.peerConnection.setLocalDescription(offer);
+    } catch (error) {
+      log.error('ICE restart failed, closing connection', { error: String(error) });
+      this.close();
+    }
   }
 
   /**
