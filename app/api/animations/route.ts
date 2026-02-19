@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CreateAnimationRequest, AnimationResponse, AnimationsListResponse } from '@/types/did';
+import { z } from 'zod';
+import { AnimationResponse, AnimationsListResponse } from '@/types/did';
 import { getApiConfig } from '@/lib/utils/env';
 import { createLogger } from '@/lib/utils/logger';
 
@@ -7,20 +8,27 @@ const log = createLogger('api/animations');
 
 const D_ID_API_BASE = 'https://api.d-id.com';
 
+const createAnimationSchema = z.object({
+  source_url: z.url(),
+  config: z.record(z.string(), z.unknown()).optional(),
+  webhook: z.url().optional(),
+  name: z.string().optional(),
+  user_data: z.string().optional(),
+});
+
 export async function POST(request: NextRequest) {
   try {
     const config = getApiConfig();
-    const body: CreateAnimationRequest = await request.json();
+    const body = await request.json();
 
-    // Validate required fields
-    if (!body.source_url) {
+    const parsed = createAnimationSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required field: source_url' },
+        { error: parsed.error.issues[0]?.message || 'Invalid request' },
         { status: 400 }
       );
     }
 
-    // Make request to D-ID API
     const response = await fetch(`${D_ID_API_BASE}/animations`, {
       method: 'POST',
       headers: {
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest) {
         'content-type': 'application/json',
         'authorization': `Basic ${config.didApiKey}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(parsed.data),
     });
 
     if (!response.ok) {
@@ -59,8 +67,7 @@ export async function GET(request: NextRequest) {
     const config = getApiConfig();
 
     if (animationId) {
-      // Get specific animation
-      const response = await fetch(`${D_ID_API_BASE}/animations/${animationId}`, {
+      const response = await fetch(`${D_ID_API_BASE}/animations/${encodeURIComponent(animationId)}`, {
         headers: {
           'accept': 'application/json',
           'authorization': `Basic ${config.didApiKey}`,
@@ -79,13 +86,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data);
 
     } else {
-      // List animations
-      const limit = searchParams.get('limit') || '20';
+      const limitParam = searchParams.get('limit') || '20';
+      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 100);
       const token = searchParams.get('token') || '';
 
       let url = `${D_ID_API_BASE}/animations?limit=${limit}`;
       if (token) {
-        url += `&token=${token}`;
+        url += `&token=${encodeURIComponent(token)}`;
       }
 
       const response = await fetch(url, {
@@ -129,7 +136,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${D_ID_API_BASE}/animations/${animationId}`, {
+    const response = await fetch(`${D_ID_API_BASE}/animations/${encodeURIComponent(animationId)}`, {
       method: 'DELETE',
       headers: {
         'accept': 'application/json',
